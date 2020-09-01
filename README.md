@@ -1,11 +1,19 @@
-# gaussiandeconvolution
+# gaussDeconv2dist
 
-Package which allow the deconvolution of two random variables from a bayesian perspactive.
+Package which allow the deconvolution of two random variables using bayesian approaches.
 
-## Testing
+## Installation
 
-Testing is managed by tox. This will build the package in a temp directory and runs the tests in the test dir.
+The package can be installed from the PYPI repository with the command:
 
 ```shell
-tox
+pip install gaussDeconv2dist
 ```
+
+## Usage
+
+The package constains two different models for performing the deconvolution:
+
+### mcmcsampler
+
+This model performs
