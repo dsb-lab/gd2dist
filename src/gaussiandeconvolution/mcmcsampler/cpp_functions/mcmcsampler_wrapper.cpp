@@ -14,7 +14,6 @@ PYBIND11_MODULE(mcmcsampler, m) {
     //Declare the convolved Gibbs sampler class
     py::class_<mcmcsampler>(m, "mcmcsampler")
         //Show contructor
-        .def(py::init<>())
         .def(py::init<unsigned int, unsigned int, double, double, unsigned int, unsigned int, unsigned int, double>(), 
             py::arg("K") = 1, py::arg("Kc") = 1, py::arg("alpha") = 1, py::arg("alphac") = 1, 
             py::arg("iterations") = 1000, py::arg("ignored_iterations") = 1000, py::arg("chains") = 4, py::arg("sigmaWidth") = 1)

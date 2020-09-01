@@ -10,32 +10,8 @@
 #include "functions.h"
 #include "mcmcsampler.h"
 
-mcmcsampler::mcmcsampler(){
-    unsigned int K = 1;
-    unsigned int Kc = 1;
-    double alpha = 1;
-    double alphac = 1;
-    unsigned int iterations = 1000;
-    unsigned int ignored_iterations = 1000;
-    unsigned int chains = 4;
-    double sigmaWidth = 1;
-    K_ = K;
-    Kc_ = Kc;
-    alpha_ = alpha;
-    alphac_ = alphac;
-    iterations_ = iterations;//Define the auxiliar functions
-    ignored_iterations_ = ignored_iterations;
-    chains_ = chains;
-    sigmaWidth_ = sigmaWidth;
-    pi_.resize(K , std::vector<double> (iterations*chains));
-    mu_.resize(K , std::vector<double> (iterations*chains));
-    sigma_.resize(K , std::vector<double> (iterations*chains));
-    pic_.resize(Kc , std::vector<double> (iterations*chains));
-    muc_.resize(Kc , std::vector<double> (iterations*chains));
-    sigmac_.resize(Kc , std::vector<double> (iterations*chains));
-}
-mcmcsampler::mcmcsampler(unsigned int K, unsigned int Kc = 1, double alpha = 1, double alphac = 1,
-                            unsigned int iterations = 1000, unsigned int ignored_iterations = 1000, unsigned int chains = 4, double sigmaWidth = 1){
+mcmcsampler::mcmcsampler(unsigned int K, unsigned int Kc, double alpha, double alphac,
+                            unsigned int iterations, unsigned int ignored_iterations, unsigned int chains, double sigmaWidth){
     K_ = K;
     Kc_ = Kc;
     alpha_ = alpha;
