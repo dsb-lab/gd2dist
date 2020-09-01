@@ -37,7 +37,6 @@ class mcmcsampler{
         double rstat(std::vector<double>);
         double effnumber(std::vector<double>);
     public:
-        mcmcsampler();
         mcmcsampler(unsigned int, unsigned int, double, double,
                              unsigned int, unsigned int, unsigned int, double);
         void set_parameters(unsigned int, unsigned int, double, double,
