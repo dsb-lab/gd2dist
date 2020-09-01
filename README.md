@@ -4,7 +4,7 @@ Package which allow the deconvolution of two random variables using bayesian app
 
 ## Installation
 
-The package can be installed from the PYPI repository with the command:
+The package can be installed from the PyPi repository with the command:
 
 ```shell
 pip install gaussDeconv2dist
