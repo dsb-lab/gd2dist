@@ -1,3 +1,0 @@
-gaussiandeconvolution
-gaussiandeconvolution/mcmcsampler
-gaussiandeconvolution/nestedsampler
