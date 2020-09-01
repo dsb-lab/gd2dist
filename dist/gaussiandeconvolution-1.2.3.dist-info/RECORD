@@ -1,0 +1,11 @@
+gaussiandeconvolution/__init__.py,sha256=WEhjO1HB8qdaqOvcNIrAiS__XI2qqzBbYup41koKy2g,55
+gaussiandeconvolution/mcmcsampler/__init__.py,sha256=LfaUXphTynCiv09ZvU_K5DkDBbYScWOSCVREAvYJPE0,36
+gaussiandeconvolution/mcmcsampler/mcmcsampler.cpython-38-x86_64-linux-gnu.so,sha256=f2PFGrz6hgvnJorXeoXkVm1Z8ZQB5xwc0YWJ742pwGw,245200
+gaussiandeconvolution/nestedsampler/__init__.py,sha256=QOoC82Qr9vTaSFeu8jutSiVKSAflDkQTAp23VKO6xC0,40
+gaussiandeconvolution/nestedsampler/gdposteriormodel.cpython-38-x86_64-linux-gnu.so,sha256=CgbUysdu2pKpZ-b0UTNMb6P3j3oWahKXCqvZXqca-pw,122160
+gaussiandeconvolution/nestedsampler/nestedsampler.py,sha256=VTZEeEIHLWV_F83gPTppERZGLHs3etrsBvcQwvVIdB0,5781
+gaussiandeconvolution-1.2.3.dist-info/LICENSE,sha256=Da4G0qUwEJZzovP9njzELGS9Z9A6y58t7GOk7KHOK-Q,1613
+gaussiandeconvolution-1.2.3.dist-info/METADATA,sha256=I6eIecBEmT28bCsgigeEOYaJ5qGJl12Kv7eG--d33RA,665
+gaussiandeconvolution-1.2.3.dist-info/WHEEL,sha256=UIZdaGAY_p6-FWfQMCjl4yNjiRusqKY1tSBy3lgEMQs,97
+gaussiandeconvolution-1.2.3.dist-info/top_level.txt,sha256=fJLmOPgGaz8NSdmxPXByZrGsWxVypHkTiWB0ZCepIv0,92
+gaussiandeconvolution-1.2.3.dist-info/RECORD,,
