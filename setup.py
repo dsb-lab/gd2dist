@@ -1,4 +1,5 @@
 import sys
+from skbuild import setup
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -8,7 +9,7 @@ setup(
     version="1.2.3",
     description="A gaussian deconvolution package",
     author='Gabriel Torregrosa Cortés',
-    author_email="g.torregrosa@outlook.com"
+    author_email="g.torregrosa@outlook.com",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
