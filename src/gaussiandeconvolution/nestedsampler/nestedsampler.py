@@ -4,7 +4,7 @@ import numpy as np
 import inspect
 from scipy.stats import norm
 
-class nestedSampler(gdposteriormodel):
+class nestedsampler(gdposteriormodel):
     def __init__(self, K = 1, Kc = 1, *kargs):
         gdposteriormodel.__init__(self,[],[],K,Kc)
 

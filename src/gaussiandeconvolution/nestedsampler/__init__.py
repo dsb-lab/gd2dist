@@ -1,1 +1,1 @@
-from .nestedsampler import nestedSampler
+from .nestedsampler import nestedsampler
