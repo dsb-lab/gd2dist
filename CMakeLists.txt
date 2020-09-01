@@ -7,7 +7,6 @@ include(GNUInstallDirs)
 
 # Fetch pybind11
 add_subdirectory(pybind11)
-#lalala
 
 set(python_module_name1 gdposteriormodel)
 pybind11_add_module(${python_module_name1} MODULE 
