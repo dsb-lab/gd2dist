@@ -1,2 +1,5 @@
 dist
 .vscode
+proba.sh
+proba.py
+wheel.sh
