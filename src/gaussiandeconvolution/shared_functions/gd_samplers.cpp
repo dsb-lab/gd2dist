@@ -5,29 +5,6 @@
 #include "gd_samplers.h"
 #include "global_random_generator.h"
 
-//Samplers autofluorescence
-std::vector<double> sample_autofluorescence(std::vector<std::vector<double>>& postSamples, int K, int Kc){
-
-    std::normal_distribution<double> norm(0,1);
-
-    int normpos;
-    std::vector<double> aux;
-    std::vector<double> samples(postSamples.size(),0);
-
-    //Choose from the samples
-    for( int i = 0; i < postSamples.size(); i++){
-        //Choose from the gaussians of the sample
-        aux = std::vector<double>(postSamples[i].begin(),postSamples[i].begin()+K);
-        normpos = choicepos(aux)[0];
-        //Sample from the gaussian
-        norm = std::normal_distribution<double>(postSamples[i][K+normpos],postSamples[i][2*K+normpos]);
-        samples[i] = norm(AUX_R);
-    }
-
-
-    return samples;
-}
-
 std::vector<double> sample_autofluorescence(std::vector<std::vector<double>>& postSamples, int K, int Kc, int nsamples){
 
     std::normal_distribution<double> norm(0,1);
@@ -74,29 +51,6 @@ std::vector<double> sample_autofluorescence(std::vector<std::vector<double>>& po
     return samples;
 }
 
-//Samplers deconvolution
-std::vector<double> sample_deconvolution(std::vector<std::vector<double>>& postSamples, int K, int Kc){
-
-    std::normal_distribution<double> norm(0,1);
-
-    int normpos;
-    std::vector<double> aux;
-    std::vector<double> samples(postSamples.size(),0);
-
-    //Choose from the samples
-    for( int i = 0; i < postSamples.size(); i++){
-        //Choose from the gaussians of the sample
-        aux = std::vector<double>(postSamples[i].begin()+3*K,postSamples[i].begin()+3*K+Kc);
-        normpos = choicepos(aux)[0];
-        //Sample from the gaussian
-        norm = std::normal_distribution<double>(postSamples[i][3*K+Kc+normpos],postSamples[i][3*K+2*Kc+normpos]);
-        samples[i] = norm(AUX_R);
-    }
-
-
-    return samples;
-}
-
 std::vector<double> sample_deconvolution(std::vector<std::vector<double>>& postSamples, int K, int Kc, int nsamples){
 
     std::normal_distribution<double> norm(0,1);
@@ -136,37 +90,6 @@ std::vector<double> sample_deconvolution(std::vector<std::vector<double>>& postS
         normpos = choicepos(aux)[0];
         //Sample from the gaussian
         norm = std::normal_distribution<double>(postSamples[pos[i]][3*K+Kc+normpos],postSamples[pos[i]][3*K+2*Kc+normpos]);
-        samples[i] = norm(AUX_R);
-    }
-
-
-    return samples;
-}
-
-//Samplers convolution
-std::vector<double> sample_convolution(std::vector<std::vector<double>>& postSamples, int K, int Kc){
-
-    std::normal_distribution<double> norm(0,1);
-
-    int normpos;
-    int normpos2;
-    std::vector<double> aux;
-    std::vector<double> samples(postSamples.size(),0);
-    double st;
-    double mean;
-
-    //Choose from the samples
-    for( int i = 0; i < postSamples.size(); i++){
-        //Choose from the gaussians of the sample
-        aux = std::vector<double>(postSamples[i].begin(),postSamples[i].begin()+K);
-        normpos = choicepos(aux)[0];
-        //Choose from the gaussians of the sample
-        aux = std::vector<double>(postSamples[i].begin()+3*K,postSamples[i].begin()+3*K+Kc);
-        normpos2 = choicepos(aux)[0];
-        //Sample from the gaussian
-        mean = postSamples[i][K+normpos]+postSamples[i][3*K+Kc+normpos2];
-        st = std::sqrt(std::pow(postSamples[i][2*K+normpos],2)+std::pow(postSamples[i][3*K+2*Kc+normpos2],2));
-        norm = std::normal_distribution<double>(mean,st);
         samples[i] = norm(AUX_R);
     }
 

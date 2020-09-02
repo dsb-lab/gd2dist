@@ -4,6 +4,13 @@
 #include <vector>
 #include <random>
 
+//Sorting
+std::vector<double> mergeSort(std::vector<double>&);
+
+//Statistics
+double mean(std::vector<double>&);
+std::vector<double> percentile(std::vector<double>&, std::vector<double>&);
+
 //Cumsum
 std::vector<double> cumsum(std::vector<double>&);
 

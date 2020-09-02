@@ -33,9 +33,10 @@ install(TARGETS ${python_module_name2} DESTINATION ./mcmcsampler)
 
 set(python_module_name3 shared_functions)
 pybind11_add_module(${python_module_name3} MODULE 
-  src/gaussiandeconvolution/shared_functions/gd_samplers_wrapper.cpp
+  src/gaussiandeconvolution/shared_functions/shared_functions_wrapper.cpp
   src/gaussiandeconvolution/shared_functions/general_functions.cpp
   src/gaussiandeconvolution/shared_functions/gd_samplers.cpp
+  src/gaussiandeconvolution/shared_functions/gd_scorers.cpp
   src/gaussiandeconvolution/shared_functions/global_random_generator.cpp
 )
 install(TARGETS ${python_module_name3} DESTINATION ./shared_functions)
