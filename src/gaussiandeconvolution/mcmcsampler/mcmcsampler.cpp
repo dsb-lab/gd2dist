@@ -5,176 +5,262 @@
 #include <algorithm>
 #include <iostream>
 #include <exception>
+#include <random>
 
-#include "probability_distributions.h"
-#include "functions.h"
+#include "../shared_functions/probability_distributions.h"
 #include "mcmcsampler.h"
 
-mcmcsampler::mcmcsampler(unsigned int K, unsigned int Kc, double alpha, double alphac,
-                            unsigned int iterations, unsigned int ignored_iterations, unsigned int chains, double sigmaWidth){
-    K_ = K;
-    Kc_ = Kc;
-    alpha_ = alpha;
-    alphac_ = alphac;
-    iterations_ = iterations;//Define the auxiliar functions
-    ignored_iterations_ = ignored_iterations;
-    chains_ = chains;
-    sigmaWidth_ = sigmaWidth;
-    pi_.resize(K , std::vector<double> (iterations*chains));
-    mu_.resize(K , std::vector<double> (iterations*chains));
-    sigma_.resize(K , std::vector<double> (iterations*chains));
-    pic_.resize(Kc , std::vector<double> (iterations*chains));
-    muc_.resize(Kc , std::vector<double> (iterations*chains));
-    sigmac_.resize(Kc , std::vector<double> (iterations*chains));
+double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> sigma){
+
+    double aux = 0;
+    int l = sigma.size();
+    int l2 = x2.size();
+
+    for (int i = 0; i < l; i++){
+        aux += -n[i]*std::log(std::pow(pos,2)+std::pow(sigma[i],2))/2
+                -x2[i]/(2*(std::pow(pos,2)+std::pow(sigma[i],2))); 
+    }
+    if (l == l2-1){
+        aux += -n[l]*std::log(std::pow(pos,2))/2
+                -x2[l]/(2*(std::pow(pos,2)));          
+    }
+
+    return aux;
 }
-void mcmcsampler::set_parameters(unsigned int K = 429496729, unsigned int Kc = 429496729, double alpha = -1, double alphac = -1,
-                            unsigned int iterations = 429496729, unsigned int ignored_iterations = 429496729, unsigned int chains = 429496729, double sigmaWidth = -1){
-    // Update the parameters
-    if (alpha != -1){
-        alpha_ = alpha;
-    }
-    if (alphac != -1){
-        alphac_ = alphac;
-    }
-    if (iterations != 429496729){
-        iterations_ = iterations;
-    }
-    if (ignored_iterations != 429496729){
-        ignored_iterations_ = ignored_iterations;
-    }
-    if (chains != 429496729){
-        chains_ = chains;
-        is_initial_condition_ = false;
-    }
-    if (K != 429496729){
-        K_ = K;
-        is_initial_condition_ = false;
-    }
-    if (Kc != 429496729){
-        Kc_ = Kc;
-        is_initial_condition_ = false;
-    }
-    if (K != 429496729 || iterations != 429496729 || chains != 429496729){    // Resize the vectors
-        pi_ = std::vector<std::vector<double>> (K , std::vector<double> (iterations_*chains_,0));
-        mu_ = std::vector<std::vector<double>> (K , std::vector<double> (iterations_*chains_,0));
-        sigma_ = std::vector<std::vector<double>> (K , std::vector<double> (iterations_*chains_,0));
-    }
-    if (Kc != 429496729 || iterations != 429496729 || chains != 429496729){    // Resize the vectors
-        pic_ = std::vector<std::vector<double>> (Kc , std::vector<double> (iterations_*chains_,0));
-        muc_ = std::vector<std::vector<double>> (Kc , std::vector<double> (iterations_*chains_,0));
-        sigmac_ = std::vector<std::vector<double>> (Kc , std::vector<double> (iterations_*chains_,0));
-    }
-    if (sigmaWidth != -1){
-        sigmaWidth_ = sigmaWidth;
-    }
+
+void sample_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
+                             std::vector<std::vector<double>> &x2, 
+                             std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew,
+                             double sigmaWidth){
+
+        int N = sigmanew.size();
+        std::normal_distribution<double> dist(0,sigmaWidth);
+        std::uniform_real_distribution<double> uniform(0,1);
+        double loss_old;
+        double loss_new;
+        double newsigma;
+        double acceptance;
+
+
+        //Metropolis acceptance algorithm
+        for (int i = 0; i < N; i++){
+
+            do{
+                newsigma = dist(r)+sigmaold[i];
+            }while(newsigma <= 0);
+
+            loss_old = effective_gamma_not_normalized(sigmaold[i], n[i], x2[i], sigma); 
+            loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma);
+
+            acceptance = std::exp(loss_new-loss_old)-uniform(r);
+
+            if(acceptance > 0 and isnan(acceptance)==false){
+                sigmanew[i] = newsigma; 
+            }else{
+                sigmanew[i] = sigmaold[i];
+            }
+        }
 
     return;
 }
-void mcmcsampler::set_initial_condition(std::map<std::string, std::vector<std::vector<double>>> check){
 
-    std::vector<std::string> names = {"pi","mu","sigma"};
-    std::vector<std::string> namesc = {"pic","muc","sigmac"};
-    std::vector<std::vector<double>> v;
-    int c = 0;
+void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double>& datac,
+                          std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
+                          std::vector<double> & pinew, std::vector<double> & munew, std::vector<double> & sigmanew, 
+                          double alpha,
+                          std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
+                          std::vector<double> & pinewc, std::vector<double> & munewc, std::vector<double> & sigmanewc,
+                          double alphac,
+                          std::vector<std::vector<std::vector<double>>> id,
+                          double sigmaWidth){
 
-    //Check autofluorescence
-    for (int i = 0; i < names.size(); i++){
-        try{
-            v = check[names[i]];
-            c += 1;
-            if(v.size() != chains_){
-                throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                            + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
-            }
-            if(v[0].size() != K_){
-                throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                            + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
+    //Step of the convolution
+    unsigned int K = pi.size();
+    unsigned int Kc = pic.size();
+    int size = K*Kc;
+    std::vector<double> probabilities(K,0);    //Auxiliar vector for the weights of z
+    std::vector<double> probabilitiesc(size,0);   //Auxiliar vector for the weights of zc
+    std::vector<int> choice(K,0);
+    std::vector<int> choicec(size,0);
+
+    std::vector<std::vector<double>> n(K,std::vector<double>(Kc+1,0));   //Counts of the different convolved gaussians
+    std::vector<std::vector<double>> x(K,std::vector<double>(Kc+1,0));   //Mean of the different convolved gaussians
+    std::vector<std::vector<double>> x2(K,std::vector<double>(Kc+1,0));   //Squared expression of the different convolved gaussians
+    std::vector<double> nminalpha(K,0);
+
+    std::vector<std::vector<double>> nc(Kc,std::vector<double>(K,0));   //Counts of the different convolved gaussians
+    std::vector<std::vector<double>> xc(Kc,std::vector<double>(K,0));   //Mean of the different convolved gaussians
+    std::vector<std::vector<double>> x2c(Kc,std::vector<double>(K,0));   //Squared expression of the different convolved gaussians
+    double muj = 0, phij = 0;
+    std::vector<double> nminalphac(Kc,0);
+    double effmean;
+    double effsigma;
+
+    double max;
+
+    //Evaluate the autofluorescence data
+    for (unsigned int i = 0; i < data.size(); i++){
+        //Compute the weights for each gaussian
+        max = -INFINITY;
+        for (unsigned int j = 0; j < K; j++){
+            probabilities[j] = std::log(pi[j])
+                                +gaussian_pdf(data[i],mu[j],sigma[j]);
+            if (probabilities[j] > max){
+                max = probabilities[j];
             }
         }
-        catch(...){
-                throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                            + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
+        //Normalize
+        for (unsigned int j = 0; j < K; j++){
+            probabilities[j] -= max;
+            probabilities[j] = std::exp(probabilities[j]);
         }
-    }
-    //Check autofluorescence
-    for (int i = 0; i < namesc.size(); i++){
-        try{
-            v = check[namesc[i]];
-            c += 1;
-            if(v.size() != chains_){
-                throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                            + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
-            }
-            if(v[0].size() != Kc_){
-                throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                            + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
-            }
+        //Assign a gaussian
+        multinomial_1(r, probabilities, choice);
+        //Compute the basic statistics
+        //We compute all the statistics already since we are going to use them only for the autofluorescence sampling
+        for (unsigned int j = 0; j < K; j++){
+            n[j][Kc] += choice[j];
+            x[j][Kc] += choice[j]*data[i];
+            x2[j][Kc] += choice[j]*std::pow(data[i]-mu[j],2);
+            nminalpha[j] += choice[j];
         }
-        catch(...){
-                throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                            + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
-        }
-    }
-    if (c < 6){
-        throw std::invalid_argument("ERROR: The function expects a dictionary with the keys {pi,mu,sigma,pic,muc,sigmac} with a matrix containing " 
-                                    + std::to_string(chains_) + " chains and " + std::to_string(K_) + "/" + std::to_string(Kc_) + " conditions, depending if it is the mixture of autofluorescence or convolution.");                
-    }
-
-    is_initial_condition_ = true;
-
-    for (int i = 0; i < names.size(); i++){
-        initial_condition_[names[i]] = check[names[i]];
-    }
-    for (int i = 0; i < namesc.size(); i++){
-        initial_condition_[namesc[i]] = check[namesc[i]];
-    }
-
-    return;
-}
-std::map<std::string, double> mcmcsampler::get_parameters(){
-    std::map<std::string, double> v;
-
-    v["K"] = double(K_);
-    v["Kc"] = double(Kc_);
-    v["alpha"] = double(alpha_);
-    v["alphac"] = double(alphac_);
-    v["iterations"] = double(iterations_);
-    v["ignored_iterations"] = double(ignored_iterations_);
-    v["chains"] = double(chains_);
-    v["sigmaWidth"] = double(sigmaWidth_);
-
-    return v;
-}
-double mcmcsampler::get_parameter(std::string parameter){
-    if (parameter == "K"){
-        return double(K_);
-    }else if (parameter == "Kc"){
-        return double(Kc_);
-    }else if (parameter == "alpha"){
-        return double(alpha_);
-    }else if (parameter == "alphac"){
-        return double(alphac_);
-    }else if (parameter == "iterations"){
-        return double(iterations_);
-    }else if (parameter == "ignored_iterations"){
-        return double(ignored_iterations_);
-    }else if (parameter == "chains"){
-        return double(chains_);
-    }else if (parameter == "sigmaWidth"){
-        return double(sigmaWidth_);
     }
     
-    return -1;
+    //Evaluate the convoluted data
+    for (unsigned int i = 0; i < datac.size(); i++){
+        //Compute the weights for each gaussian
+        max = -INFINITY;
+        for (unsigned int j = 0; j < K; j++){
+            for (unsigned int k = 0; k < Kc; k++){
+                probabilitiesc[K*k+j] = std::log(pic[k])+std::log(pi[j])
+                                    +gaussian_pdf(datac[i],mu[j]+muc[k],std::sqrt(std::pow(sigmac[k],2)+std::pow(sigma[j],2)));
+                if (probabilitiesc[K*k+j]>max){
+                    max = probabilitiesc[K*k+j];
+                }
+            }
+        }
+        //Normalize
+        for (unsigned int j = 0; j < K; j++){
+            for (unsigned int k = 0; k < Kc; k++){
+                probabilitiesc[K*k+j] -= max;
+                probabilitiesc[K*k+j] = std::exp(probabilitiesc[K*k+j]);
+            }
+        }
+        //Assign a convoluted gaussian
+        multinomial_1(r, probabilitiesc, choicec);
+        //Save the identity
+        //We do not compute the statistics because they will have to be updated since this dataset is used for sampling twice
+        for (unsigned int j = 0; j < K; j++){
+            for (unsigned int k = 0; k < Kc; k++){
+                id[k][j][i] = choicec[K*k+j];
+                nminalpha[j] += choicec[K*k+j];
+                nminalphac[k] += choicec[K*k+j];
+            }
+        }
+    }
+    //Add the priors
+    for (unsigned int k = 0; k < K; k++){
+        nminalpha[k] += alpha/K;
+    }    
+    for (unsigned int k = 0; k < Kc; k++){
+        nminalphac[k] += alphac/Kc;
+    }    
+
+    //Sample the new mixtures
+    dirichlet(r, nminalpha, pinew);
+    dirichlet(r, nminalphac, pinewc);
+
+    //Sample the autofluorescence variance and mean
+    //Compute the statistics
+    for (unsigned int i = 0; i < datac.size(); i++){
+        for (unsigned int j = 0; j < K; j++){
+            for (unsigned int k = 0; k < Kc; k++){
+                n[j][k] += id[k][j][i];
+                x[j][k] += id[k][j][i]*(datac[i]-muc[k]);
+                x2[j][k] += id[k][j][i]*std::pow(datac[i]-mu[j]-muc[k],2);
+            }
+        }
+    }
+    //Sample the variances
+    sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
+    //Sample the means
+    for (unsigned int j = 0; j < K; j++){
+        //Convoluted terms
+        for (unsigned int k = 0; k < Kc; k++){
+            effsigma += n[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
+            effmean += x[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
+        }
+        //Autofluorescence terms
+        effsigma += n[j][Kc]/(std::pow(sigmanew[j],2));
+        effmean += x[j][Kc]/(std::pow(sigmanew[j],2));
+        
+        if (effsigma == 0){
+            munew[j] = mu[j];
+        }else{
+            effmean = effmean/effsigma;
+            effsigma = 1/effsigma;
+
+            if(isnan(effsigma)==false){
+                std::normal_distribution<double> gaussian(effmean, effsigma);
+                munew[j] = gaussian(r);
+            }
+        }
+
+        //Clean variables
+        effmean = 0;
+        effsigma = 0;
+    }    
+
+    //Sample the convoluted variance and mean
+    //Compute the statistics
+    for (unsigned int i = 0; i < datac.size(); i++){
+        for (unsigned int j = 0; j < K; j++){
+            for (unsigned int k = 0; k < Kc; k++){
+                nc[k][j] += id[k][j][i];
+                xc[k][j] += id[k][j][i]*(datac[i]-munew[j]);
+                x2c[k][j] += id[k][j][i]*std::pow(datac[i]-munew[j]-muc[k],2);
+            }
+        }
+    }
+    //Sample the variances
+    sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
+    //Sample the means
+    for (unsigned int k = 0; k < Kc; k++){
+        for (unsigned int j = 0; j < K; j++){
+            //I have to solve the problem of the sampling
+            effsigma += nc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
+            effmean += xc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
+        }
+        if (effsigma == 0){
+            munewc[k] = muc[k];
+        }else{
+            effmean = effmean/effsigma;
+            effsigma = 1/effsigma;
+
+            if(isnan(effsigma)==false){
+                std::normal_distribution<double> gaussian(effmean, effsigma);
+                munewc[k] = gaussian(r);
+            }
+        }
+        //Clean variables
+        effmean = 0;
+        effsigma = 0;
+    }    
+
+    return;
 }
-void mcmcsampler::chain(int pos0, std::vector<double> & data, std::vector<double> & datac){
+
+void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
+                                int ignored_iterations, int iterations, int nChains,
+                                int K, int Kc, double alpha, double alphac, double sigmaWidth, bool initialised, bool showProgress){
     //Variables for the random generation
     std::mt19937 r{(long unsigned int)(time(0)+pos0)};
 
-    std::vector<double> pi(K_), mu(K_), sigma(K_), pinew(K_), munew(K_), sigmanew(K_);
+    std::vector<double> pi(K), mu(K), sigma(K), pinew(K), munew(K), sigmanew(K);
 
-    std::vector<double> pic(Kc_), muc(Kc_), sigmac(Kc_), pinewc(Kc_), munewc(Kc_), sigmanewc(Kc_);
+    std::vector<double> pic(Kc), muc(Kc), sigmac(Kc), pinewc(Kc), munewc(Kc), sigmanewc(Kc);
 
-    std::vector<std::vector<std::vector<double>>> id(Kc_,std::vector<std::vector<double>>(K_,std::vector<double>(datac.size())));
+    std::vector<std::vector<std::vector<double>>> id(Kc,std::vector<std::vector<double>>(K,std::vector<double>(datac.size())));
 
     double var = 0, varc = 0, mean = 0, meanc = 0;
     //Compute statistics
@@ -191,660 +277,147 @@ void mcmcsampler::chain(int pos0, std::vector<double> & data, std::vector<double
         varc += std::pow(datac[i]-meanc,2)/datac.size();
     }
     //Initialise
-    if (is_initial_condition_ == false){
+    if (initialised == false){
         std::normal_distribution<double> gaussian(mean,std::sqrt(varc));
-        for (int i = 0; i < K_; i++){
+        for (int i = 0; i < K; i++){
             pi[i] = 1;
             mu[i] = gaussian(r);
             sigma[i] = std::sqrt(var);
         }
 
         std::normal_distribution<double> gaussianc(meanc-mean,std::sqrt(varc));
-        for (int i = 0; i < Kc_; i++){
+        for (int i = 0; i < Kc; i++){
             pic[i] = 1;
             muc[i] = gaussianc(r);
             sigmac[i] = std::sqrt(varc);
         }
     }else{
-        for (int i = 0; i < K_; i++){
-            pi[i] = pi_[i][pos0];
-            mu[i] = mu_[i][pos0];
-            sigma[i] = sigma_[i][pos0];
+        for (int i = 0; i < K; i++){
+            pi[i] = posterior[pos0][i];
+            mu[i] = posterior[pos0][K+i];
+            sigma[i] = posterior[pos0][2*K+i];
         }
-        for (int i = 0; i < Kc_; i++){
-            pic[i] = pic_[i][pos0];
-            muc[i] = muc_[i][pos0];
-            sigmac[i] = sigmac_[i][pos0];
+        for (int i = 0; i < Kc; i++){
+            pic[i] = posterior[pos0][3*K+i];
+            muc[i] = posterior[pos0][3*K+Kc+i];
+            sigmac[i] = posterior[pos0][3*K+2*Kc+i];
         }
     }
 
+    int progressStep = floor(ignored_iterations/10);
+    int progressCounter = 0;
+    int chainId = int(pos0/iterations);
     //Ignorable, steps
-    for (unsigned int i = 0; i < ignored_iterations_; i++){
+    for (unsigned int i = 0; i < ignored_iterations; i++){
         Gibbs_convolved_step(r, data, datac,
-                         pi, mu, sigma, pinew, munew, sigmanew, alpha_,
-                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac_,
-                         id, sigmaWidth_);
+                         pi, mu, sigma, pinew, munew, sigmanew, alpha,
+                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
+                         id, sigmaWidth);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
         pic = pinewc;
         muc = munewc;
         sigmac = sigmanewc;
+
+        if(showProgress){
+            if(i % progressCounter == 0){
+                std::cout << "Chain " << chainId << " ignorable iterations: " << progressCounter * 10 << " %\n";
+                progressCounter++;
+            }
+        }
     }
+    if(showProgress){
+        std::cout << "Chain " << chainId << " ignorable iterations: 100%\n";
+    }
+
+    progressStep = floor(iterations/10);
+    progressCounter = 0;
     //Recorded steps
-    for (unsigned int i = 0; i < iterations_; i++){
+    for (unsigned int i = 0; i < iterations; i++){
         Gibbs_convolved_step(r, data, datac,
-                         pi, mu, sigma, pinew, munew, sigmanew, alpha_,
-                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac_,
-                         id, sigmaWidth_);
+                         pi, mu, sigma, pinew, munew, sigmanew, alpha,
+                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
+                         id, sigmaWidth);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
-        for (unsigned int j = 0; j < K_; j++){
-            pi_[j][pos0+i] = pinew[j];
-            mu_[j][pos0+i] = munew[j];
-            sigma_[j][pos0+i] = sigmanew[j];
+        for (unsigned int j = 0; j < K; j++){
+            posterior[pos0+i][j] = pinew[j];
+            posterior[pos0+i][K+j] = munew[j];
+            posterior[pos0+i][2*K+j] = sigmanew[j];
         }
         pic = pinewc;
         muc = munewc;
         sigmac = sigmanewc;
-        for (unsigned int j = 0; j < Kc_; j++){
-            pic_[j][pos0+i] = pinewc[j];
-            muc_[j][pos0+i] = munewc[j];
-            sigmac_[j][pos0+i] = sigmanewc[j];
+        for (unsigned int j = 0; j < Kc; j++){
+            posterior[pos0+i][3*K+j] = pinewc[j];
+            posterior[pos0+i][3*K+Kc+j] = munewc[j];
+            posterior[pos0+i][3*K+2*Kc+j] = sigmanewc[j];
         }
+
+        if(showProgress){
+            if(i % progressCounter == 0){
+                std::cout << "Chain " << chainId << " recorded iterations: " << progressCounter * 10 << " %\n";
+                progressCounter++;
+            }
+        }
+    }
+    if(showProgress){
+        std::cout << "Chain " << chainId << " recorded iterations: 100%\n";
     }
 
     return;
 }
-void mcmcsampler::sort_chains(std::string flavour = "weights"){
+std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
+                          int ignored_iterations, int iterations, int nChains,
+                          int K, int Kc, double alpha, double alphac, double sigmaWidth, std::vector<std::vector<double>> initial_conditions, bool showProgress){
 
-    double aux;
-    bool change;
-
-    if (flavour == "means"){
-        for( int i = 0; i < chains_*iterations_; i++){
-            //Sort autofluorescence
-            for( int j = 0; j < K_-1; j++){
-                change = false;
-                for( int k = 0; k < K_-1; k++){
-                    if (mu_[k][i]>mu_[k+1][i]){
-                        change = true;
-                        //Interchange them
-                        aux = mu_[k+1][i];
-                        mu_[k+1][i] = mu_[k][i];
-                        mu_[k][i] = aux;
-
-                        aux = sigma_[k+1][i];
-                        sigma_[k+1][i] = sigma_[k][i];
-                        sigma_[k][i] = aux;
-
-                        aux = pi_[k+1][i];
-                        pi_[k+1][i] = pi_[k][i];
-                        pi_[k][i] = aux;
-
-                        change = true;
-                    }
-                }
-                if (change = false){
-                    break;
-                }
-            }
-            //Sort autofluorescence
-            for( int j = 0; j < Kc_-1; j++){
-                change = false;
-                for( int k = 0; k < Kc_-1; k++){
-                    if (muc_[k][i]>muc_[k+1][i]){
-                        change = true;
-                        //Interchange them
-                        aux = muc_[k+1][i];
-                        muc_[k+1][i] = muc_[k][i];
-                        muc_[k][i] = aux;
-
-                        aux = sigmac_[k+1][i];
-                        sigmac_[k+1][i] = sigmac_[k][i];
-                        sigmac_[k][i] = aux;
-
-                        aux = pic_[k+1][i];
-                        pic_[k+1][i] = pic_[k][i];
-                        pic_[k][i] = aux;
-
-                        change = true;
-                    }
-                }
-                if (change = false){
-                    break;
-                }
-            }
+    //Variable to check if initialised
+    bool initialised = false;
+    //Initialise posterior
+    std::vector<std::vector<double>> posterior;
+    //Check if initial conditions are given
+    if(!initial_conditions.empty()){
+        //Check correct 
+        if(initial_conditions.size()!=nChains){
+            throw std::length_error("initial_conditions must have as many initial conditions as chains in the model.");
         }
-    }
-    else if (flavour == "weights"){
-        for( int i = 0; i < chains_*iterations_; i++){
-            //Sort autofluorescence
-            for( int j = 0; j < K_-1; j++){
-                change = false;
-                for( int k = 0; k < K_-1; k++){
-                    if (pi_[k][i]>pi_[k+1][i]){
-                        change = true;
-                        //Interchange them
-                        aux = mu_[k+1][i];
-                        mu_[k+1][i] = mu_[k][i];
-                        mu_[k][i] = aux;
-
-                        aux = sigma_[k+1][i];
-                        sigma_[k+1][i] = sigma_[k][i];
-                        sigma_[k][i] = aux;
-
-                        aux = pi_[k+1][i];
-                        pi_[k+1][i] = pi_[k][i];
-                        pi_[k][i] = aux;
-
-                        change = true;
-                    }
-                }
-                if (change = false){
-                    break;
-                }
-            }
-            //Sort autofluorescence
-            for( int j = 0; j < Kc_-1; j++){
-                change = false;
-                for( int k = 0; k < Kc_-1; k++){
-                    if (pic_[k][i]>pic_[k+1][i]){
-                        change = true;
-                        //Interchange them
-                        aux = muc_[k+1][i];
-                        muc_[k+1][i] = muc_[k][i];
-                        muc_[k][i] = aux;
-
-                        aux = sigmac_[k+1][i];
-                        sigmac_[k+1][i] = sigmac_[k][i];
-                        sigmac_[k][i] = aux;
-
-                        aux = pic_[k+1][i];
-                        pic_[k+1][i] = pic_[k][i];
-                        pic_[k][i] = aux;
-
-                        change = true;
-                    }
-                }
-                if (change = false){
-                    break;
-                }
-            }
+        if(initial_conditions[0].size()!=(3*K+3*Kc)){
+            throw std::length_error("Each chain requires as initial conditions all the parameters of the model: \n" 
+                                    + std::to_string(K) + " weights for the noise mixture \n"
+                                    + std::to_string(K) + " means for the noise mixture \n"
+                                    + std::to_string(K) + " std's for the noise mixture \n"
+                                    + std::to_string(Kc) + " weights for the noise mixture \n"
+                                    + std::to_string(Kc) + " means for the noise mixture \n"
+                                    + std::to_string(Kc) + " std's for the noise mixture \n" );
         }
+        //Create matrix
+        posterior = std::vector<std::vector<double>>(iterations*nChains,std::vector<double>(3*K+3*Kc,0));
+        //Assign initial conditions
+        for(int i = 0; i < nChains; i++){
+            posterior[iterations*i] = initial_conditions[i];
+        }
+        initialised = true;
+    }else{
+        //Create matrix
+        posterior = std::vector<std::vector<double>>(iterations*nChains,std::vector<double>(3*K+3*Kc,0));
+        initialised = false;
     }
 
-    return;
-}
-void mcmcsampler::fit(std::vector<double> data, std::vector<double> datac){
-    
-    //Set initial conditions
-    if (is_initial_condition_){
-        for(unsigned int i = 0; i < chains_; i++){
-            int a = i*iterations_;
-            for (int j = 0; j < K_; j++){
-                pi_[j][a] = initial_condition_["pi"][i][j]; 
-                mu_[j][a] = initial_condition_["mu"][i][j]; 
-                sigma_[j][a] = initial_condition_["sigma"][i][j]; 
-            }
-            for (int j = 0; j < Kc_; j++){
-                pic_[j][a] = initial_condition_["pic"][i][j]; 
-                muc_[j][a] = initial_condition_["muc"][i][j]; 
-                sigmac_[j][a] = initial_condition_["sigmac"][i][j]; 
-            }            
-        }
-    }
     //Create threads
-    std::thread chains[chains_];
-    for(unsigned int i = 0; i < chains_; i++){
-        int a = i*iterations_;
-        chains[i] = std::thread(&mcmcsampler::chain, this, a, std::ref(data), std::ref(datac)); //Need explicit by reference std::ref
+    std::thread chains[nChains];
+    for(unsigned int i = 0; i < nChains; i++){
+        int a = i*iterations;
+        chains[i] = std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
+                                ignored_iterations, iterations, nChains,
+                                K, Kc, alpha, alphac, sigmaWidth,
+                                initialised, showProgress); //Need explicit by reference std::refs
     }
     //Wait for rejoining
-    for(unsigned int i = 0; i < chains_; i++){
+    for(unsigned int i = 0; i < nChains; i++){
         chains[i].join();
     }
 
-    return;
-}
-std::map<std::string, std::vector<std::vector<double>>> mcmcsampler::get_fit_parameters(){
-    std::map<std::string, std::vector<std::vector<double>>> v;
-    v["pi"] = pi_;
-    v["mu"] = mu_;
-    v["sigma"] = sigma_;
-    v["pic"] = pic_;
-    v["muc"] = muc_;
-    v["sigmac"] = sigmac_;
-
-    return v;
-}
-std::vector<std::vector<double>> mcmcsampler::score_deconvolution(std::vector<double> data){
-    int N = data.size();
-    int length = iterations_*chains_;
-    std::vector<double> p(iterations_*chains_,0);
-    std::vector<std::vector<double>> statistics(3,std::vector<double>(N,0));
-    double aux;
-    double pcum;
-    
-    for (int k = 0; k < N; k++){
-        for (int i = 0; i < length; i++){
-            for(unsigned int j = 0; j < Kc_; j++){
-                aux = pic_[j][i]*std::exp(gaussian_pdf(data[k],muc_[j][i],sigmac_[j][i]));
-                p[i] += aux;
-                pcum += aux;
-            }
-        }
-        //Compute the values
-        std::sort(&(p[0]),&(p[length-1])); //Order
-        //Statistics
-        statistics[0][k] = pcum/length;
-        statistics[1][k] = p[int(0.025*length)];
-        statistics[2][k] = p[int(0.975*length)];
-        //Cleean the array
-        for (int i = 0; i < length; i++){
-            p[i] = 0;
-        }
-        pcum = 0;
-    }
-
-    return statistics;
-}
-std::vector<std::vector<double>> mcmcsampler::score_autofluorescence(std::vector<double> data){
-    int N = data.size();
-    int length = iterations_*chains_;
-    std::vector<double> p(iterations_*chains_,0);
-    std::vector<std::vector<double>> statistics(3,std::vector<double>(N,0));
-    double aux;
-    double pcum;
-    
-    for (int k = 0; k < N; k++){
-        for (int i = 0; i < length; i++){
-            for(unsigned int j = 0; j < K_; j++){
-                aux = pi_[j][i]*std::exp(gaussian_pdf(data[k],mu_[j][i],sigma_[j][i]));
-                p[i] += aux;
-                pcum += aux;
-            }
-        }
-        //Compute the values
-        std::sort(&(p[0]),&(p[length-1])); //Order
-        //Statistics
-        statistics[0][k] = pcum/length;
-        statistics[1][k] = p[int(0.025*length)];
-        statistics[2][k] = p[int(0.975*length)];
-        //Cleean the array
-        for (int i = 0; i < length; i++){
-            p[i] = 0;
-        }
-        pcum = 0;
-    }
-
-    return statistics;
-}
-std::vector<std::vector<double>> mcmcsampler::score_convolution(std::vector<double> data){
-    int N = data.size();
-    int length = iterations_*chains_;
-    std::vector<double> p(iterations_*chains_,0);
-    std::vector<std::vector<double>> statistics(3,std::vector<double>(N,0));
-    double aux;
-    double pcum;
-    
-    for (int k = 0; k < N; k++){
-        for (int i = 0; i < length; i++){
-            for(unsigned int j = 0; j < Kc_; j++){
-                for(unsigned int l = 0; l < K_; l++){
-                    aux = pic_[j][i]*pi_[l][i]*std::exp(gaussian_pdf(data[k],muc_[j][i]+mu_[l][i],
-                                                std::sqrt(std::pow(sigmac_[j][i],2)+std::pow(sigma_[l][i],2))));
-                    p[i] += aux;
-                    pcum += aux;
-                }
-            }
-        }
-        //Compute the values
-        std::sort(&(p[0]),&(p[length-1])); //Order
-        //Statistics
-        statistics[0][k] = pcum/length;
-        statistics[1][k] = p[int(0.025*length)];
-        statistics[2][k] = p[int(0.975*length)];
-        //Cleean the array
-        for (int i = 0; i < length; i++){
-            p[i] = 0;
-        }
-        pcum = 0;
-    }
-
-    return statistics;
-}
-std::vector<double> mcmcsampler::sample_deconvolution(int n_samples = 1, std::string method="all", int sample = 0){
-
-    //Variables for the random generation
-    std::mt19937 r{(long unsigned int)time(0)};
-    //Choose for choosing from the samples
-    std::uniform_int_distribution<int> distribution(0,iterations_*chains_);
-
-    std::vector<double> v(n_samples,0);
-    std::vector<int> choice(Kc_,0);
-    std::vector<double> pi(Kc_,0);
-    int pos;
-    int gaussian1;
-    
-    if(method == "all"){
-        for (int i = 0; i < n_samples; i++){
-            pos = distribution(r);
-            for (int j = 0; j < Kc_; j++){
-                pi[j] = pic_[j][pos];
-            }
-            multinomial_1(r,pi,choice);
-            for (int j = 0; j < Kc_; j++){
-                if( 1 == choice[j]){
-                    gaussian1 = j;
-                    break;
-                }
-            }
-            std::normal_distribution<double> gaussian(muc_[gaussian1][pos], sigmac_[gaussian1][pos]);
-            v[i] = gaussian(r);
-            std::cout << v[i] << std::endl;
-        }
-    } else if (method == "single"){
-        pos = sample;
-        for (int i = 0; i < n_samples; i++){
-            for (int j = 0; j < Kc_; j++){
-                pi[j] = pic_[j][pos];
-            }
-            multinomial_1(r,pi,choice);
-            for (int j = 0; j < Kc_; j++){
-                if( 1 == choice[j]){
-                    gaussian1 = j;
-                    break;
-                }
-            }
-            std::normal_distribution<double> gaussian(muc_[gaussian1][pos], sigmac_[gaussian1][pos]);
-            v[i] = gaussian(r);
-            std::cout << v[i] << std::endl;
-        }
-    }
-    else{
-        throw std::invalid_argument("ERROR: The funtion expects the number of samples to be drawn (default 1), a string with the method (all or single) and a int indicating the sample to use in case of method being single.");                
-
-    }
-
-    return v;
-}
-std::vector<double> mcmcsampler::sample_autofluorescence(int n_samples = 1, std::string method="all", int sample = 0){
-
-    //Variables for the random generation
-    std::mt19937 r{(long unsigned int)time(0)};
-    //Choose for choosing from the samples
-    std::uniform_int_distribution<int> distribution(0,iterations_*chains_);
-
-    std::vector<double> v(n_samples,0);
-    std::vector<int> choice(pi_.size());
-    std::vector<double> pi(pi_.size());
-    int pos;
-    int gaussian1;
-
-    if (method == "all"){
-        for (int i = 0; i < n_samples; i++){
-            pos = distribution(r);
-            for (int j = 0; j < pi_.size(); j++){
-                pi[j] = pi_[j][pos];
-            }
-            multinomial_1(r,pi,choice);
-            for (int j = 0; j < pi_.size(); j++){
-                if( 1 == choice[j]){
-                    gaussian1 = j;
-                    break;
-                }
-            }
-            std::normal_distribution<double> gaussian(mu_[gaussian1][pos], sigma_[gaussian1][pos]);
-            v[i] = gaussian(r);
-        }
-    }else if (method == "single"){
-        pos = sample;
-        for (int i = 0; i < n_samples; i++){
-            for (int j = 0; j < pi_.size(); j++){
-                pi[j] = pi_[j][pos];
-            }
-            multinomial_1(r,pi,choice);
-            for (int j = 0; j < pi_.size(); j++){
-                if( 1 == choice[j]){
-                    gaussian1 = j;
-                    break;
-                }
-            }
-            std::normal_distribution<double> gaussian(mu_[gaussian1][pos], sigma_[gaussian1][pos]);
-            v[i] = gaussian(r);
-        }
-    }
-    else{
-        throw std::invalid_argument("ERROR: The funtion expects the number of samples to be drawn (default 1), a string with the method (all or single) and a int indicating the sample to use in case of method being single.");                
-
-    }
-
-
-    return v;
-}
-std::vector<double> mcmcsampler::sample_convolution(int n_samples = 1, std::string method="all", int sample = 0){
-
-    //Variables for the random generation
-    std::mt19937 r{(long unsigned int)time(0)};
-    //Choose for choosing from the samples
-    std::uniform_int_distribution<int> distribution(0,iterations_*chains_);
-
-    std::vector<double> v(n_samples,0);
-    std::vector<int> choice1(pic_.size());
-    std::vector<int> choice2(pi_.size());
-    std::vector<double> pi(pi_.size());
-    std::vector<double> pic(pic_.size());
-    int pos;
-    int gaussian1;
-    int gaussian2;
-    if (method=="all"){
-        for (int i = 0; i < n_samples; i++){
-            pos = distribution(r);
-            for (int j = 0; j < pi_.size(); j++){
-                pi[j] = pi_[j][pos];
-            }
-            for (int j = 0; j < pic_.size(); j++){
-                pic[j] = pic_[j][pos];
-            }
-            multinomial_1(r,pi,choice1);
-            for (int j = 0; j < pic_.size(); j++){
-                if( 1 == choice1[j]){
-                    gaussian1 = j;
-                    break;
-                }
-            }
-            multinomial_1(r,pic,choice2);
-            for (int j = 0; j < pi_.size(); j++){
-                if( 1 == choice2[j]){
-                    gaussian2 = j;
-                    break;
-                }
-            }
-            std::normal_distribution<double> gaussian(muc_[gaussian1][pos]+mu_[gaussian2][pos], 
-                                                    std::sqrt(std::pow(sigmac_[gaussian1][pos],2)+std::pow(sigma_[gaussian2][pos],2)));
-            v[i] = gaussian(r);
-        }
-    }
-    else if (method=="single"){
-        pos = sample;
-        for (int i = 0; i < n_samples; i++){
-            for (int j = 0; j < pi_.size(); j++){
-                pi[j] = pi_[j][pos];
-            }
-            for (int j = 0; j < pic_.size(); j++){
-                pic[j] = pic_[j][pos];
-            }
-            multinomial_1(r,pi,choice1);
-            for (int j = 0; j < pic_.size(); j++){
-                if( 1 == choice1[j]){
-                    gaussian1 = j;
-                    break;
-                }
-            }
-            multinomial_1(r,pic,choice2);
-            for (int j = 0; j < pi_.size(); j++){
-                if( 1 == choice2[j]){
-                    gaussian2 = j;
-                    break;
-                }
-            }
-            std::normal_distribution<double> gaussian(muc_[gaussian1][pos]+mu_[gaussian2][pos], 
-                                                    std::sqrt(std::pow(sigmac_[gaussian1][pos],2)+std::pow(sigma_[gaussian2][pos],2)));
-            v[i] = gaussian(r);
-        }
-    }
-    else{
-        throw std::invalid_argument("ERROR: The funtion expects the number of samples to be drawn (default 1), a string with the method (all or single) and a int indicating the sample to use in case of method being single.");                
-
-    }
-
-
-    return v;
-}
-double mcmcsampler::rstat(std::vector<double> vphi){
-    int n = int(iterations_/2);
-    int m = 2*chains_;
-    std::vector<double> phij(m,0);
-    double phi = 0;
-    std::vector<double> sj(m,0);
-    double B = 0;
-    double W = 0;
-
-    //Compute phij
-    for (int i = 0; i < m; i++){
-        for (int j = 0; j < n; j++){
-            phij[i] += vphi[i*n+j];
-        }
-        phij[i] /= n;
-    }
-    //Compute phi
-    for (int i = 0; i < m; i++){
-        phi += phij[i];
-    }
-    phi /= m;
-    //Compute B
-    for (int i = 0; i < m; i++){
-        B += std::pow(phij[i]-phi,2);
-    }
-    B *= n/(m-1);
-    //Compute sj
-    for (int i = 0; i < m; i++){
-        for (int j = 0; j < n; j++){
-            sj[i] += std::pow(vphi[i*n+j]-phij[i],2);
-        }
-        sj[i] /= (n-1);
-    }
-    //Compute W
-    for (int i = 0; i < m; i++){
-        W += sj[i];
-    }
-    W /= m;
-
-    if(W == 0){
-        return 1;
-    }
-    else{
-        return std::sqrt(1-1/n+B/(W*n));
-    }
-}
-double mcmcsampler::effnumber(std::vector<double> vphi){
-    int n = int(iterations_/2);
-    int m = 2*chains_;
-    std::vector<double> phij(m,0);
-    double phi = 0;
-    std::vector<double> sj(m,0);
-    double B = 0;
-    double W = 0;
-    double Var = 0;
-    double rhoT = 0;
-    double rho0 = 0;
-    double rho1 = 0;
-    int t = 1;
-    double Vt = 0;
-
-    //Compute phij
-    for (int i = 0; i < m; i++){
-        for (int j = 0; j < n; j++){
-            phij[i] += vphi[i*n+j];
-        }
-        phij[i] /= n;
-    }
-    //Compute phi
-    for (int i = 0; i < m; i++){
-        phi += phij[i];
-    }
-    phi /= m;
-    //Compute B
-    for (int i = 0; i < m; i++){
-        B += std::pow(phij[i]-phi,2);
-    }
-    B *= n/(m-1);
-    //Compute sj
-    for (int i = 0; i < m; i++){
-        for (int j = 0; j < n; j++){
-            sj[i] += std::pow(vphi[i*n+j]-phij[i],2);
-        }
-        sj[i] /= (n-1);
-    }
-    //Compute W
-    for (int i = 0; i < m; i++){
-        W += sj[i];
-    }
-    W /= m;
-    //Compute Var+
-    Var = (n-1)/n*W+B/n;
-
-    //Compute neff
-    do{
-        Vt = 0;
-        for (int i = 0; i < m; i++){
-            for (int j = 0; j < n-t; j++){
-                Vt += std::pow(vphi[n*i+j]-vphi[n*i+j+t],2);
-            }
-        }
-        Vt /= m*(n-t);
-        rho1 = rho0;
-        rho0 = 1-Vt/(2*Var);
-        if (rho1+rho0 >= 0){
-            rhoT += rho0;
-        }
-        else{
-            break;
-        }
-
-        t += 1;
-    }while(t < iterations_);
-
-    return m*n/(1+2*rhoT);
-}
-std::map<std::string, std::map<std::string, double>> mcmcsampler::statistics(std::string flavour = "weights"){
-    std::map<std::string, std::map<std::string, double>> v;
-
-    sort_chains(flavour);
-
-    for (int i = 0; i < K_; i++){
-        //R
-        v["pi"+std::to_string(i)]["R"]= rstat(pi_[i]); 
-        v["mu"+std::to_string(i)]["R"]= rstat(mu_[i]) ;
-        v["sigma"+std::to_string(i)]["R"]= rstat(sigma_[i]); 
-        //neff
-        v["pi"+std::to_string(i)]["neff"]= effnumber(pi_[i]); 
-        v["mu"+std::to_string(i)]["neff"]= effnumber(mu_[i]) ;
-        v["sigma"+std::to_string(i)]["neff"]= effnumber(sigma_[i]); 
-
-    }
-    for (int i = 0; i < Kc_; i++){
-        //R
-        v["pic"+std::to_string(i)]["R"]= rstat(pic_[i]); 
-        v["muc"+std::to_string(i)]["R"]= rstat(muc_[i]); 
-        v["sigmac"+std::to_string(i)]["R"]= rstat(sigmac_[i]); 
-        //neff
-        v["pic"+std::to_string(i)]["neff"]= effnumber(pic_[i]); 
-        v["muc"+std::to_string(i)]["neff"]= effnumber(muc_[i]); 
-        v["sigmac"+std::to_string(i)]["neff"]= effnumber(sigmac_[i]); 
-    }
-
-    return v;
+    return posterior;
 }

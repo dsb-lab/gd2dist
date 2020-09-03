@@ -8,51 +8,27 @@
 #include <algorithm>
 #include <iostream>
 #include <exception>
+#include <random>
 
-#include "functions.h"
-
-class mcmcsampler{
-    private:
-        unsigned int K_;
-        unsigned int Kc_;
-        double alpha_;
-        double alphac_;
-        //Parameters sampler
-        unsigned int iterations_;
-        unsigned int ignored_iterations_;
-        unsigned int chains_;
-        double sigmaWidth_;
-        std::vector<std::vector<double>> pi_;
-        std::vector<std::vector<double>> pic_;
-        std::vector<std::vector<double>> mu_;
-        std::vector<std::vector<double>> muc_;
-        std::vector<std::vector<double>> sigma_;
-        std::vector<std::vector<double>> sigmac_;
-        //Parameters initial condition
-        bool is_initial_condition_ = false;        
-        std::map<std::string, std::vector<std::vector<double>>> initial_condition_;
-        //Internal functions
-        void chain(int, std::vector<double> &, std::vector<double> &);
-        void sort_chains(std::string);
-        double rstat(std::vector<double>);
-        double effnumber(std::vector<double>);
-    public:
-        mcmcsampler(unsigned int = 1, unsigned int = 1, double = 1, double = 1,
-                             unsigned int = 1000, unsigned int = 1000, unsigned int = 4, double = 1);
-        void set_parameters(unsigned int, unsigned int, double, double,
-                             unsigned int, unsigned int, unsigned int, double);
-        void set_initial_condition(std::map<std::string, std::vector<std::vector<double>>>);
-        std::map<std::string, double> get_parameters();
-        double get_parameter(std::string);
-        void fit(std::vector<double>, std::vector<double>);
-        std::map<std::string, std::vector<std::vector<double>>> get_fit_parameters();
-        std::vector<std::vector<double>> score_deconvolution(std::vector<double>);
-        std::vector<std::vector<double>> score_autofluorescence(std::vector<double>);
-        std::vector<std::vector<double>> score_convolution(std::vector<double>);
-        std::vector<double> sample_deconvolution(int, std::string, int); 
-        std::vector<double> sample_autofluorescence(int, std::string, int); 
-        std::vector<double> sample_convolution(int, std::string, int); 
-        std::map<std::string, std::map<std::string, double>> statistics(std::string);
-};   
+double effective_gamma_not_normalized(double, std::vector<double>, std::vector<double>, std::vector<double>);
+void sample_effective_gamma(std::mt19937 &, std::vector<std::vector<double>> &,
+                             std::vector<std::vector<double>> &, 
+                             std::vector<double> &, std::vector<double> &, std::vector<double> &,
+                             double);
+void Gibbs_convolved_step(std::mt19937 &, std::vector<double> &, std::vector<double>&,
+                          std::vector<double> &, std::vector<double> &, std::vector<double> &,
+                          std::vector<double> &, std::vector<double> &, std::vector<double> &, 
+                          double,
+                          std::vector<double> &, std::vector<double> &, std::vector<double> &,
+                          std::vector<double> &, std::vector<double> &, std::vector<double> &,
+                          double,
+                          std::vector<std::vector<std::vector<double>>>,
+                          double);
+void chain(int, std::vector<std::vector<double>> &, std::vector<double> &, std::vector<double> &,                          
+                                int, int, int,
+                                int, int, double, double, double, bool, bool);
+std::vector<std::vector<double>> fit(std::vector<double> &, std::vector<double>&,
+                          int, int, int,
+                          int, int, double, double, double, std::vector<std::vector<double>>, bool);
 
 #endif
