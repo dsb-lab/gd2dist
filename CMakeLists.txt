@@ -19,15 +19,15 @@ set(python_module_name1 gdposteriormodel)
 pybind11_add_module(${python_module_name1} MODULE 
   src/gaussiandeconvolution/nestedsampler/gdposteriormodel_wrapper.cpp
   src/gaussiandeconvolution/nestedsampler/gdposteriormodel.cpp
-  src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
 )
 install(TARGETS ${python_module_name1} DESTINATION ./nestedsampler)
 
-set(python_module_name2 mcmcsampler)
+set(python_module_name2 mcmcposteriorsampler)
 pybind11_add_module(${python_module_name2} MODULE 
   src/gaussiandeconvolution/mcmcsampler/mcmcsampler_wrapper.cpp
   src/gaussiandeconvolution/mcmcsampler/mcmcsampler.cpp
-)
+  src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
+  )
 install(TARGETS ${python_module_name2} DESTINATION ./mcmcsampler)
 
 set(python_module_name3 shared_functions)

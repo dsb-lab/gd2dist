@@ -7,10 +7,9 @@
 #include "mcmcsampler.h"
 #include <vector>
 
-
 namespace py = pybind11;
 
-PYBIND11_MODULE(mcmcsampler, m) {
+PYBIND11_MODULE(mcmcposteriorsampler, m) {
     m.doc() = "Gaussian deconvolution library"; // optional module docstring
 
     m.def("fit", &fit, "Function for the fit process of the mcmc model",

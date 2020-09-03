@@ -1,13 +1,19 @@
-from .mcmcsampler import fit
+from .mcmcposteriorsampler import fit
+from scipy.stats import norm
+
+from ..shared_functions import *
+
 
 class mcmcsampler:
-    __init__(self, K=1, Kc=1, alpha = 1, alphac = 1):
+    def __init__(self, K=1, Kc=1, alpha = 1, alphac = 1):
         self.K = 1
         self.Kc = 1
         self.alpha = 1
         self.alphac = 1
 
-    def fit(self, data, datac, iterations, ignored_iterations, chains, sigmawidth, initialConditions, showProgress):
+        return
+
+    def fit(self, data, datac, iterations = 1000, ignored_iterations = 1000, chains = 1, sigmawidth = 0.1, initialConditions = [], showProgress = True):
 
         self.data = data
         self.datac = datac
