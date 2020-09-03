@@ -16,5 +16,6 @@ setup(
     packages=['gaussiandeconvolution', 'gaussiandeconvolution/nestedsampler', 'gaussiandeconvolution/mcmcsampler', 'gaussiandeconvolution/shared_functions'],
     package_dir={'': 'src'},
     cmake_install_dir='src/gaussiandeconvolution',
-    python_requires = ">=3.6"
+    python_requires = ">=3.6",
+    install_requires = ["numpy>=1.19","scipy>=1.5","dynesty>=1.0","pandas>=1.1"]
 )
