@@ -64,7 +64,7 @@ double rstat(std::vector<std::vector<double>>& vphi){
     return rstat(vphi2, vphi.size());
 }
 
-double effnumber(std::vector<double> vphi, int nChains){
+double effnumber(std::vector<double>& vphi, int nChains){
     int totalLength = vphi.size(); 
     //Split each chain in 2
     int n = int(totalLength/nChains/2);

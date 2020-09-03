@@ -9,6 +9,7 @@
 
 #include "../shared_functions/probability_distributions.h"
 #include "mcmcsampler.h"
+#include "pybind11/pybind11.h"
 
 double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> sigma){
 
@@ -277,7 +278,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         varc += std::pow(datac[i]-meanc,2)/datac.size();
     }
     //Initialise
-    if (initialised == false){
+    if (!initialised){
         std::normal_distribution<double> gaussian(mean,std::sqrt(varc));
         for (int i = 0; i < K; i++){
             pi[i] = 1;
@@ -303,12 +304,12 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
             sigmac[i] = posterior[pos0][3*K+2*Kc+i];
         }
     }
-
+    
     int progressStep = floor(ignored_iterations/10);
     int progressCounter = 0;
     int chainId = int(pos0/iterations);
     //Ignorable, steps
-    for (unsigned int i = 0; i < ignored_iterations; i++){
+    for (int i = 0; i < ignored_iterations; i++){
         Gibbs_convolved_step(r, data, datac,
                          pi, mu, sigma, pinew, munew, sigmanew, alpha,
                          pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
@@ -321,14 +322,14 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         sigmac = sigmanewc;
 
         if(showProgress){
-            if(i % progressCounter == 0){
-                std::cout << "Chain " << chainId << " ignorable iterations: " << progressCounter * 10 << " %\n";
+            if(i % progressStep == 0){
+                pybind11::print("Chain", chainId, " Ignorable iterations: ", progressCounter * 10, "%");
                 progressCounter++;
             }
         }
     }
     if(showProgress){
-        std::cout << "Chain " << chainId << " ignorable iterations: 100%\n";
+        pybind11::print("Chain", chainId, " Ignorable iterations: 100%");
     }
 
     progressStep = floor(iterations/10);
@@ -357,14 +358,14 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         }
 
         if(showProgress){
-            if(i % progressCounter == 0){
-                std::cout << "Chain " << chainId << " recorded iterations: " << progressCounter * 10 << " %\n";
+            if(i % progressStep == 0){
+                pybind11::print("Chain",chainId," Recorded iterations: ",progressCounter * 10,"%");
                 progressCounter++;
             }
         }
     }
     if(showProgress){
-        std::cout << "Chain " << chainId << " recorded iterations: 100%\n";
+        pybind11::print("Chain",chainId," Recorded iterations: 100%");
     }
 
     return;
@@ -418,6 +419,6 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
     for(unsigned int i = 0; i < nChains; i++){
         chains[i].join();
     }
-
+    
     return posterior;
 }

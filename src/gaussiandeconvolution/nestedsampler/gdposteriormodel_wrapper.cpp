@@ -18,7 +18,7 @@ PYBIND11_MODULE(gdposteriormodel, m) {
         .def(py::init<std::vector<double>, std::vector<double>, int, int>())
         .def("logLikelihood", &gdposteriormodel::logLikelihood)
         .def("prior", &gdposteriormodel::prior)
-        .def_readwrite("_K", &gdposteriormodel::_K)
-        .def_readwrite("_Kc", &gdposteriormodel::_Kc)
+        .def_readwrite("K", &gdposteriormodel::K)
+        .def_readwrite("Kc", &gdposteriormodel::Kc)
         ;
 }

@@ -7,6 +7,7 @@
 #include <vector>
 #include "gd_samplers.h"
 #include "gd_scorers.h"
+#include "mcmc_convergence_statistics.h"
 
 namespace py = pybind11;
 
@@ -49,36 +50,45 @@ PYBIND11_MODULE(shared_functions, m) {
 
     //Wrappers of the scoring functions
     m.def("score_autofluorescence", 
-    (std::vector<double> (*)(std::vector<std::vector<double>>&, std::vector<double>, int, int, int)) &score_autofluorescence,
+    (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int)) &score_autofluorescence,
      "score the autofluorecence from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("size"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("weights"), py::arg("size"));
     
     m.def("score_autofluorescence", 
-    (std::vector<double> (*)(std::vector<std::vector<double>>&, std::vector<double>, int, int, std::vector<double>&, int)) &score_autofluorescence,
+    (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int)) &score_autofluorescence,
      "score the autofluorecence from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("weights"), py::arg("size"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("size"));
 
 
     m.def("score_deconvolution", 
-    (std::vector<double> (*)(std::vector<std::vector<double>>&, std::vector<double>, int, int, int)) &score_deconvolution,
+    (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int)) &score_deconvolution,
      "score the target from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("size"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("weights"), py::arg("size"));
     
     m.def("score_deconvolution", 
-    (std::vector<double> (*)(std::vector<std::vector<double>>&, std::vector<double>, int, int, std::vector<double>&, int)) &score_deconvolution,
+    (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int)) &score_deconvolution,
      "score the target from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("weights"), py::arg("size"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("size"));
 
 
     m.def("score_convolution", 
-    (std::vector<double> (*)(std::vector<std::vector<double>>&, std::vector<double>, int, int, int)) &score_convolution,
+    (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int)) &score_convolution,
      "score the convolution from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("size"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("weights"), py::arg("size"));
     
     m.def("score_convolution", 
-    (std::vector<double> (*)(std::vector<std::vector<double>>&, std::vector<double>, int, int, std::vector<double>&, int)) &score_convolution,
+    (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int)) &score_convolution,
      "score the convolution from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("weights"), py::arg("size"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("size"));
 
+    //Wrappers mcmc statistics
+    m.def("rstat",
+    (double (*)(std::vector<double>&, int)) &rstat, py::arg("samples"), py::arg("nChains"));
+    m.def("rstat",
+    (double (*)(std::vector<std::vector<double>>&)) &rstat, py::arg("samples"));
 
+    m.def("effnumber",
+    (double (*)(std::vector<double>&, int)) &effnumber, py::arg("samples"), py::arg("nChains"));
+    m.def("effnumber",
+    (double (*)(std::vector<std::vector<double>>&)) &effnumber, py::arg("samples"));
 }

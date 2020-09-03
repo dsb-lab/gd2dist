@@ -10,7 +10,10 @@ double conv_norm_mixt_logpdf(double, std::vector<double>, int, int);
 
 //scoring
 std::vector<std::vector<double>> score_autofluorescence(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int);
+std::vector<std::vector<double>> score_autofluorescence(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int);
 std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int);
+std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int);
 std::vector<std::vector<double>> score_convolution(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int);
+std::vector<std::vector<double>> score_convolution(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int);
 
 #endif

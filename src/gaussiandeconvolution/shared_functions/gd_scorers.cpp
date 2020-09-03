@@ -124,8 +124,34 @@ std::vector<std::vector<double>> score_autofluorescence(std::vector<std::vector<
     return values;
 }
 
-std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<double>>& sample, std::vector<double>& x, int K, int Kc, std::vector<double> percentiles, std::vector<double> weights, int size){
+std::vector<std::vector<double>> score_autofluorescence(std::vector<std::vector<double>>& sample, std::vector<double>& x, int K, int Kc, std::vector<double> percentiles, int size){
 
+    int xsize = x.size();
+    int psize = percentiles.size();
+    std::vector<std::vector<double>> values(1+psize,std::vector<double>(xsize,0));
+    std::vector<std::vector<double>> aux(xsize, std::vector<double>(size,0));
+
+    std::vector<int> pos = choicepos(sample.size(), size);
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < xsize; j++){
+            aux[j][i] = std::exp(aut_norm_mixt_logpdf(x[j],sample[pos[i]],K,Kc));
+        }
+    }
+
+    std::vector<double> per(psize,0);
+    for(int i = 0; i < xsize; i++){
+        values[0][i] = mean(aux[i]);
+        per = percentile(aux[i], percentiles);
+        for(int j = 0; j < psize; j++){
+            values[j][i] = per[j];
+        }
+    }
+
+    return values;
+}
+
+std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<double>>& sample, std::vector<double>& x, int K, int Kc, std::vector<double> percentiles, std::vector<double> weights, int size){
+    
     if(sample.size() != weights.size()){
         throw std::invalid_argument("sample and weights must have the same length. Given lengths " + std::to_string(sample.size()) + " and " + std::to_string(weights.size())+ ", respectively.");                
     }
@@ -136,6 +162,32 @@ std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<dou
     std::vector<std::vector<double>> aux(xsize, std::vector<double>(size,0));
 
     std::vector<int> pos = choicepos(weights, size);
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < xsize; j++){
+            aux[j][i] = std::exp(deconv_norm_mixt_logpdf(x[j],sample[pos[i]],K,Kc));
+        }
+    }
+
+    std::vector<double> per(psize,0);
+    for(int i = 0; i < xsize; i++){
+        values[0][i] = mean(aux[i]);
+        per = percentile(aux[i], percentiles);
+        for(int j = 0; j < psize; j++){
+            values[j][i] = per[j];
+        }
+    }
+
+    return values;
+}
+
+std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<double>>& sample, std::vector<double>& x, int K, int Kc, std::vector<double> percentiles, int size){
+
+    int xsize = x.size();
+    int psize = percentiles.size();
+    std::vector<std::vector<double>> values(1+psize,std::vector<double>(xsize,0));
+    std::vector<std::vector<double>> aux(xsize, std::vector<double>(size,0));
+
+    std::vector<int> pos = choicepos(sample.size(), size);
     for(int i = 0; i < size; i++){
         for(int j = 0; j < xsize; j++){
             aux[j][i] = std::exp(deconv_norm_mixt_logpdf(x[j],sample[pos[i]],K,Kc));
@@ -166,6 +218,32 @@ std::vector<std::vector<double>> score_convolution(std::vector<std::vector<doubl
     std::vector<std::vector<double>> aux(xsize, std::vector<double>(size,0));
 
     std::vector<int> pos = choicepos(weights, size);
+    for(int i = 0; i < size; i++){
+        for(int j = 0; j < xsize; j++){
+            aux[j][i] = std::exp(conv_norm_mixt_logpdf(x[j],sample[pos[i]],K,Kc));
+        }
+    }
+
+    std::vector<double> per(psize,0);
+    for(int i = 0; i < xsize; i++){
+        values[0][i] = mean(aux[i]);
+        per = percentile(aux[i], percentiles);
+        for(int j = 0; j < psize; j++){
+            values[j][i] = per[j];
+        }
+    }
+
+    return values;
+}
+
+std::vector<std::vector<double>> score_convolution(std::vector<std::vector<double>>& sample, std::vector<double>& x, int K, int Kc, std::vector<double> percentiles, int size){
+
+    int xsize = x.size();
+    int psize = percentiles.size();
+    std::vector<std::vector<double>> values(1+psize,std::vector<double>(xsize,0));
+    std::vector<std::vector<double>> aux(xsize, std::vector<double>(size,0));
+
+    std::vector<int> pos = choicepos(sample.size(), size);
     for(int i = 0; i < size; i++){
         for(int j = 0; j < xsize; j++){
             aux[j][i] = std::exp(conv_norm_mixt_logpdf(x[j],sample[pos[i]],K,Kc));

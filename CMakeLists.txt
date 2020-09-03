@@ -38,5 +38,6 @@ pybind11_add_module(${python_module_name3} MODULE
   src/gaussiandeconvolution/shared_functions/gd_scorers.cpp
   src/gaussiandeconvolution/shared_functions/global_random_generator.cpp
   src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
+  src/gaussiandeconvolution/shared_functions/mcmc_convergence_statistics.cpp
 )
 install(TARGETS ${python_module_name3} DESTINATION ./shared_functions)

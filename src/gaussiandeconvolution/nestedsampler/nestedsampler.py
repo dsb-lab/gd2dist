@@ -7,8 +7,8 @@ from scipy.stats import norm
 from ..shared_functions import *
 
 class nestedsampler(gdposteriormodel):
-    def __init__(self, K = 1, Kc = 1, *kargs):
-        gdposteriormodel.__init__(self,[],[],K,Kc)
+    def __init__(self, k = 1, kc = 1, *kargs):
+        gdposteriormodel.__init__(self,[],[],k,kc)
 
     def fit(self, dataNoise, dataConvolution, **kwargs):
 
@@ -20,8 +20,8 @@ class nestedsampler(gdposteriormodel):
         run_nested_args = [k for k, v in inspect.signature(dn.NestedSampler).parameters.items()]
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
-        gdposteriormodel.__init__(self,dataNoise,dataConvolution,self._K,self._Kc)
-        self.dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self._K+3*self._Kc, **nestedsampler_dict)
+        gdposteriormodel.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
+        self.dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
         self.dynestyModel.run_nested(**run_nested_dict)
         self.samples = self.dynestyModel.results["samples"]
         weightMax = np.max(self.dynestyModel.results["logz"])
@@ -32,24 +32,24 @@ class nestedsampler(gdposteriormodel):
 
     def sample_autofluorescence(self, size = 1):
 
-        return  sample_autofluorescence(self.samples,self._K,self._Kc,weights=self.weights,size=size)
+        return  sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size)
 
     def sample_deconvolution(self, size = 1):
 
-        return  sample_deconvolution(self.samples,self._K,self._Kc,weights=self.weights,size=size)
+        return  sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size)
 
     def sample_convolution(self, size = 1):
 
-        return  sample_convolution(self.samples,self._K,self._Kc,weights=self.weights,size=size)
+        return  sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size)
 
-    def score_autofluorescence(self, x, size = 100):
+    def score_autofluorescence(self, x, percentiles = [5, 95], size = 100):
 
-        return  score_autofluorescence(self.samples, x, self._K,self._Kc, weights=self.weights, size=size)
+        return  score_autofluorescence(self.samples, x, self.K,self.Kc, weights=self.weights, size=size)
 
-    def score_deconvolution(self, x, size = 100):
+    def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
 
-        return  sample_deconvolution(self.samples, x, self._K, self._Kc, weights=self.weights, size=size)
+        return  sample_deconvolution(self.samples, x, self.K, self.Kc, weights=self.weights, size=size)
 
-    def score_convolution(self, x, size = 100):
+    def score_convolution(self, x, percentiles = [5, 95], size = 100):
 
-        return  sample_convolution(self.samples, x, self._K, self._Kc, weights=self.weights, size=size)
+        return  sample_convolution(self.samples, x, self.K, self.Kc, weights=self.weights, size=size)

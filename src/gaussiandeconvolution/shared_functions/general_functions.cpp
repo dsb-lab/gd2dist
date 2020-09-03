@@ -141,8 +141,8 @@ std::vector<double> mergeSort(std::vector<double>& toSort){
 
 std::vector<int> choicepos(int sup, int nsamples){
 
-    if(0<sup){ //Check if sup is bigger than inf
-        std::cout << "superior (sup) has to be bigger than 0\n";
+    if(0>sup){ //Check if sup is bigger than inf
+        throw std::invalid_argument("superior (sup) has to be bigger than 0\n");
     }
 
     std::uniform_int_distribution<int> unif(0,sup);
