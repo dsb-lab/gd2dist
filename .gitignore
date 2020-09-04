@@ -1,5 +1,7 @@
 dist
-cosesacopiar
+_skbuild
+*.egg-info
+
 .vscode
 wheel.sh
 proba.py
