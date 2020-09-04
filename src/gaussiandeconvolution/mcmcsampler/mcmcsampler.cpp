@@ -255,7 +255,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                                 int ignored_iterations, int iterations, int nChains,
                                 int K, int Kc, double alpha, double alphac, double sigmaWidth, bool initialised, bool showProgress){
     //Variables for the random generation
-    std::mt19937 r{(long unsigned int)(time(0)+pos0)};
+    std::mt19937 r;
 
     std::vector<double> pi(K), mu(K), sigma(K), pinew(K), munew(K), sigmanew(K);
 
