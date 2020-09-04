@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="gaussiandeconvolution",
-    version="0.1",
+    version="0.0.1",
     description="A gaussian deconvolution package",
     author='Gabriel Torregrosa Cortés',
     author_email="g.torregrosa@outlook.com",
