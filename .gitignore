@@ -3,8 +3,10 @@ _skbuild
 *.egg-info
 
 .vscode
-wheel.sh
+wheel_linux.sh
+wheel_windows.sh
 proba.py
 proba.sh
 
 dockers
+docker.sh

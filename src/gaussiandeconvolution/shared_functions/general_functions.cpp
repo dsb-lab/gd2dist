@@ -1,6 +1,7 @@
 #include <vector>
 #include <random>
 #include <exception>
+#include <stdexcept>
 #include <iostream>
 
 #include "general_functions.h"

@@ -5,7 +5,9 @@
 #include <algorithm>
 #include <iostream>
 #include <exception>
+#include <stdexcept>
 #include <random>
+#include <cmath>
 
 #include "../shared_functions/probability_distributions.h"
 #include "mcmcsampler.h"
@@ -55,7 +57,7 @@ void sample_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n
 
             acceptance = std::exp(loss_new-loss_old)-uniform(r);
 
-            if(acceptance > 0 and isnan(acceptance)==false){
+            if(acceptance > 0 and std::isnan(acceptance)==false){
                 sigmanew[i] = newsigma; 
             }else{
                 sigmanew[i] = sigmaold[i];
@@ -201,7 +203,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             effmean = effmean/effsigma;
             effsigma = 1/effsigma;
 
-            if(isnan(effsigma)==false){
+            if(std::isnan(effsigma)==false){
                 std::normal_distribution<double> gaussian(effmean, effsigma);
                 munew[j] = gaussian(r);
             }
@@ -238,7 +240,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             effmean = effmean/effsigma;
             effsigma = 1/effsigma;
 
-            if(isnan(effsigma)==false){
+            if(std::isnan(effsigma)==false){
                 std::normal_distribution<double> gaussian(effmean, effsigma);
                 munewc[k] = gaussian(r);
             }

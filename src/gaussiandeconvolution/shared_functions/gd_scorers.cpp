@@ -2,6 +2,7 @@
 #include <random>
 #include <iostream>
 #include <exception>
+#include <stdexcept>
 #include <string>
 
 #include "global_random_generator.h"
