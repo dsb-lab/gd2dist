@@ -57,7 +57,7 @@ void sample_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n
 
             acceptance = std::exp(loss_new-loss_old)-uniform(r);
 
-            if(acceptance > 0 and std::isnan(acceptance)==false){
+            if((acceptance > 0) && (std::isnan(acceptance)==false)){
                 sigmanew[i] = newsigma; 
             }else{
                 sigmanew[i] = sigmaold[i];
@@ -409,13 +409,13 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
     }
 
     //Create threads
-    std::thread chains[nChains];
+    std::vector<std::thread> chains;
     for(unsigned int i = 0; i < nChains; i++){
         int a = i*iterations;
-        chains[i] = std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
+        chains.push_back(std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
                                 ignored_iterations, iterations, nChains,
                                 K, Kc, alpha, alphac, sigmaWidth,
-                                initialised, showProgress); //Need explicit by reference std::refs
+                                initialised, showProgress)); //Need explicit by reference std::refs
     }
     //Wait for rejoining
     for(unsigned int i = 0; i < nChains; i++){

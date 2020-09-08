@@ -4,7 +4,6 @@ _skbuild
 
 .vscode
 wheel_linux.sh
-wheel_windows.sh
 proba.py
 proba.sh
 

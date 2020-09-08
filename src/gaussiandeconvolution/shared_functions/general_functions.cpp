@@ -87,7 +87,7 @@ std::vector<double> mergeSort(std::vector<double>& toSort){
         while(max2 < length){
             max = pos2;
             max2 = std::min(max+step,length);
-            while(pos < max and pos2 < max2){
+            while((pos < max) && (pos2 < max2)){
                 if(toSort[pos] < toSort[pos2]){
                     sorted[sortPosition] = toSort[pos];
                     pos++;
@@ -173,7 +173,7 @@ std::vector<int> choicepos(std::vector<double>& weights, int nsamples){
         w = total*unif(AUX_R);
         count = 0;
         //Find 
-        while(cumweight[count] < w and count < size){
+        while((cumweight[count] < w) && (count < size)){
             count++;
         }
         samples[i] = count;

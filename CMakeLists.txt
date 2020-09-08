@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.14...3.17)
 
 project(gaussiandeconvolution VERSION "0.1")
 
-# Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
-include(GNUInstallDirs)
-
 # Fetch pybind11
 include(FetchContent)
 FetchContent_Declare(
@@ -13,6 +10,22 @@ FetchContent_Declare(
   GIT_TAG v2.5.0
 )
 FetchContent_MakeAvailable(pybind11)
+
+# Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
+include(GNUInstallDirs)
+
+set(CMAKE_SYSTEM_NAME Windows)
+set(TOOLCHAIN_PREFIX x86_64-w64-mingw32)
+#set(TOOLCHAIN_PREFIX i686-w64-mingw32)
+set(CMAKE_CXX_IMPLICIT_INCLUDE_DIRECTORIES /usr/lib/gcc/${TOOLCHAIN_PREFIX}/10.2.0)
+# cross compilers to use for C and C++
+set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc)
+set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++)
+#set(CMAKE_C_COMPILER ${TOOLCHAIN_PREFIX}-gcc-posix)
+#set(CMAKE_CXX_COMPILER ${TOOLCHAIN_PREFIX}-g++-posix)
+set(CMAKE_RC_COMPILER ${TOOLCHAIN_PREFIX}-windres)
+
+#include_directories(/usr/include)
 
 set(python_module_name1 gdposteriormodel)
 pybind11_add_module(${python_module_name1} MODULE 
