@@ -1,1 +1,15 @@
 dist
+_skbuild
+*.egg-info
+
+.vscode
+wheel_linux.sh
+proba.py
+proba.sh
+
+dockers
+docker.sh
+
+dist
+docs
+tests

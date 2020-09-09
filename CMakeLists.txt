@@ -2,12 +2,8 @@ cmake_minimum_required(VERSION 3.14...3.17)
 
 project(gaussiandeconvolution VERSION "0.1")
 
-# Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
-include(GNUInstallDirs)
-
 # Fetch pybind11
 include(FetchContent)
-
 FetchContent_Declare(
   pybind11
   GIT_REPOSITORY https://github.com/pybind/pybind11
@@ -15,21 +11,32 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
+# Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
+include(GNUInstallDirs)
+
 set(python_module_name1 gdposteriormodel)
 pybind11_add_module(${python_module_name1} MODULE 
-  src/gaussiandeconvolution/nestedsampler/cpp_functions/gdposteriormodel_wrapper.cpp
-  src/gaussiandeconvolution/nestedsampler/cpp_functions/gdposteriormodel.cpp
+  src/gaussiandeconvolution/nestedsampler/gdposteriormodel_wrapper.cpp
+  src/gaussiandeconvolution/nestedsampler/gdposteriormodel.cpp
 )
 install(TARGETS ${python_module_name1} DESTINATION ./nestedsampler)
 
-set(python_module_name2 mcmcsampler)
+set(python_module_name2 mcmcposteriorsampler)
 pybind11_add_module(${python_module_name2} MODULE 
-  src/gaussiandeconvolution/mcmcsampler/cpp_functions/mcmcsampler_wrapper.cpp
-  src/gaussiandeconvolution/mcmcsampler/cpp_functions/mcmcsampler.cpp
-  src/gaussiandeconvolution/mcmcsampler/cpp_functions/functions.cpp
-  src/gaussiandeconvolution/mcmcsampler/cpp_functions/probability_distributions.cpp
-)
+  src/gaussiandeconvolution/mcmcsampler/mcmcsampler_wrapper.cpp
+  src/gaussiandeconvolution/mcmcsampler/mcmcsampler.cpp
+  src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
+  )
 install(TARGETS ${python_module_name2} DESTINATION ./mcmcsampler)
 
-# Quiet a warning, since this project is only valid with SKBUILD
-set(ignoreMe "${SKBUILD}")
+set(python_module_name3 shared_functions)
+pybind11_add_module(${python_module_name3} MODULE 
+  src/gaussiandeconvolution/shared_functions/shared_functions_wrapper.cpp
+  src/gaussiandeconvolution/shared_functions/general_functions.cpp
+  src/gaussiandeconvolution/shared_functions/gd_samplers.cpp
+  src/gaussiandeconvolution/shared_functions/gd_scorers.cpp
+  src/gaussiandeconvolution/shared_functions/global_random_generator.cpp
+  src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
+  src/gaussiandeconvolution/shared_functions/mcmc_convergence_statistics.cpp
+)
+install(TARGETS ${python_module_name3} DESTINATION ./shared_functions)

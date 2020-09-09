@@ -4,118 +4,157 @@ import numpy as np
 import inspect
 from scipy.stats import norm
 
+from ..shared_functions import *
+
 class nestedsampler(gdposteriormodel):
-    def __init__(self, K = 1, Kc = 1, *kargs):
+    """
+    Class for the nested sampler of the deconvolution gaussian model
+    """
+    def __init__(self, K = 1, Kc = 1):
+        """
+        Constructor of the class
+
+
+        Parameters
+        --------------
+            K: int, Number of components of the noise distribution
+            Kc: int, Number of components of the convolved distribution
+
+        Returns
+        --------------
+            nothing
+        """
         gdposteriormodel.__init__(self,[],[],K,Kc)
 
+        return
+
     def fit(self, dataNoise, dataConvolution, **kwargs):
+        """
+        Fit the model to the posterior distribution
+
+        Parameters
+        ------------
+            dataNoise: list
+                1D array witht he data of the noise
+            dataConvolution: list
+                1D array witht he data of the convolution
+            **kwargs: 
+                Arguments to be passed to the *DynamicNestedSampler* and *run_nested* functions from the dynesty package
+
+        Returns
+        ------------
+            Nothing
+        """
+        self.data = dataNoise
+        self.datac = dataConvolution
 
         #separate kargs for the two different samplers functions
         #nested sampler function
-        nestedsampler_args = [k for k, v in inspect.signature(dn.NestedSampler).parameters.items()]
+        nestedsampler_args = [k for k, v in inspect.signature(dn.DynamicNestedSampler).parameters.items()]
         nestedsampler_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in nestedsampler_args}
+        if not ("sample" in nestedsampler_dict.keys()):
+            nestedsampler_dict["sample"] = "rslice"
+
         #run nested function
         run_nested_args = [k for k, v in inspect.signature(dn.NestedSampler).parameters.items()]
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
-        gdposteriormodel.__init__(self,dataNoise,dataConvolution,self._K,self._Kc)
-        self.dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self._K+3*self._Kc, **nestedsampler_dict)
+        gdposteriormodel.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
+        self.dynestyModel = dn.DynamicNestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
         self.dynestyModel.run_nested(**run_nested_dict)
+        self.samples = self.dynestyModel.results["samples"]
+        weightMax = np.max(self.dynestyModel.results["logz"])
+        self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
+        self.weights = self.weights/np.sum(self.weights)
 
         return
 
-    def score_autofluorescence(self, x, samples = 100, percentiles=[5,95]):
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
-        weights = weights/np.sum(weights)
-        choices = np.random.choice(range(len(weights)), samples, p=weights)
-        
-        evalSamples = []
-        for i in choices:
-            aux = []
-            s = self.dynestyModel.results["samples"][i]
-            for j in range(self._K):
-                aux.append(s[j]*norm.pdf(x,loc=s[self._K+j],scale=s[2*self._K+j]))
-            evalSamples.append(np.sum(aux,axis=0))
+    def sample_autofluorescence(self, size = 1):
+        """
+        Generate samples from the fitted posterior distribution according to the noise distribution
 
-        return np.mean(evalSamples,axis=0), np.percentile(evalSamples,percentiles,axis=0)
+        Parameters
+        --------------
+            size: int, number of samples to be drawn
 
-    def score_deconvolution(self, x, samples = 100, percentiles=[5,95]):
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
-        weights = weights/np.sum(weights)
-        choices = np.random.choice(range(len(weights)), samples, p=weights)
-        
-        evalSamples = []
-        for i in choices:
-            aux = []
-            s = self.dynestyModel.results["samples"][i]
-            for j in range(self._Kc):
-                aux.append(s[3*self._K+j]*norm.pdf(x,loc=s[3*self._K+self._Kc+j],scale=s[3*self._K+2*self._Kc+j]))
-            evalSamples.append(np.sum(aux,axis=0))
+        Returns:
+            list: list, 1D array with *size* samples from the model
+        """
 
-        return np.mean(evalSamples,axis=0), np.percentile(evalSamples,percentiles,axis=0)
+        return  sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size)
 
-    def score_convolution(self, x, samples = 100, percentiles=[5,95]):
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
-        weights = weights/np.sum(weights)
-        choices = np.random.choice(range(len(weights)), samples, p=weights)
-        
-        evalSamples = []
-        for i in choices:
-            aux = []
-            s = self.dynestyModel.results["samples"][i]
-            for j in range(self._K):
-                for k in range(self._Kc):
-                    aux.append(s[j]*s[3*self._K+k]*norm.pdf(x,loc=s[self._K+j]+s[3*self._K+self._Kc+k],scale=np.sqrt(s[2*self._K+j]**2+s[3*self._K+2*self._Kc+k]**2)))
-            evalSamples.append(np.sum(aux,axis=0))
+    def sample_deconvolution(self, size = 1):
+        """
+        Generate samples from the fitted posterior distribution according to the deconvolved distribution
 
-        return np.mean(evalSamples,axis=0), np.percentile(evalSamples,percentiles,axis=0)
+        Parameters
+        --------------
+            size: int, number of samples to be drawn
 
-    def sample_autofluorescence(self, samples = 1):
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
-        weights = weights/np.sum(weights)
-        choices = np.random.choice(range(len(weights)), samples, p=weights)
-        
-        evalSamples = np.zeros(samples)
-        for j,i in enumerate(choices):
-            s = self.dynestyModel.results["samples"][i][0:self._K]
-            choice = np.random.choice(range(self._K),p=s)
-            s = self.dynestyModel.results["samples"][i]
-            evalSamples[j] = norm.rvs(loc=s[self._K+choice],scale=s[2*self._K+choice])
+        Returns:
+            list: list, 1D array with *size* samples from the model
+        """
 
-        return evalSamples
+        return  sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size)
 
-    def sample_deconvolution(self, samples = 1):
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
-        weights = weights/np.sum(weights)
-        choices = np.random.choice(range(len(weights)), samples, p=weights)
-        
-        evalSamples = np.zeros(samples)
-        for j,i in enumerate(choices):
-            s = self.dynestyModel.results["samples"][i][3*self._K:3*self._K+self._Kc]
-            choice = np.random.choice(range(self._Kc),p=s)
-            s = self.dynestyModel.results["samples"][i]
-            evalSamples[j] = norm.rvs(loc=s[3*self._K+self._Kc+choice],scale=s[3*self._K+2*self._Kc+choice])
+    def sample_convolution(self, size = 1):
+        """
+        Generate samples from the fitted posterior distribution according to the convolved distribution
 
-        return evalSamples
+        Parameters
+        --------------
+            size: int, number of samples to be drawn
 
-    def sample_convolution(self, samples = 1):
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
-        weights = weights/np.sum(weights)
-        choices = np.random.choice(range(len(weights)), samples, p=weights)
-        
-        evalSamples = np.zeros(samples)
-        for j,i in enumerate(choices):
-            s = self.dynestyModel.results["samples"][i][0:self._K]
-            choice = np.random.choice(range(self._K),p=s)
-            s = self.dynestyModel.results["samples"][i][3*self._K:3*self._K+self._Kc]
-            choice2 = np.random.choice(range(self._Kc),p=s)
-            s = self.dynestyModel.results["samples"][i]
-            evalSamples[j] = norm.rvs(loc=s[self._K+choice]+s[3*self._K+self._Kc+choice2],scale=np.sqrt(s[2*self._K+choice]**2+s[3*self._K+2*self._Kc+choice2]**2))
+        Returns:
+            list: list, 1D array with *size* samples from the model
+        """
 
-        return evalSamples
+        return  sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size)
+
+    def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 500):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the noise distribution
+
+        Parameters
+        --------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns:
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+
+        return  score_autofluorescence(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size)
+
+    def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 500):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
+
+        Parameters
+        --------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns:
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+
+        return  score_deconvolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size)
+
+    def score_convolution(self, x, percentiles = [0.05, 0.95], size = 500):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
+
+        Parameters
+        --------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns:
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+
+        return  score_convolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size)
