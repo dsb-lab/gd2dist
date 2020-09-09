@@ -11,3 +11,5 @@ dockers
 docker.sh
 
 dist
+
+tests

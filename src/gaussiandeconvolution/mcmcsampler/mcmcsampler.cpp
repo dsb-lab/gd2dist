@@ -255,9 +255,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
 void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
                                 int ignored_iterations, int iterations, int nChains,
-                                int K, int Kc, double alpha, double alphac, double sigmaWidth, bool initialised, bool showProgress){
+                                int K, int Kc, double alpha, double alphac, double sigmaWidth, bool initialised, bool showProgress, int seed){
     //Variables for the random generation
     std::mt19937 r;
+    r.seed(seed);
 
     std::vector<double> pi(K), mu(K), sigma(K), pinew(K), munew(K), sigmanew(K);
 
@@ -325,13 +326,17 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
         if(showProgress){
             if(i % progressStep == 0){
+                pybind11::gil_scoped_acquire acquire;
                 pybind11::print("Chain", chainId, " Ignorable iterations: ", progressCounter * 10, "%");
+                pybind11::gil_scoped_release release;
                 progressCounter++;
             }
         }
     }
     if(showProgress){
+        pybind11::gil_scoped_acquire acquire;
         pybind11::print("Chain", chainId, " Ignorable iterations: 100%");
+        pybind11::gil_scoped_release release;
     }
 
     progressStep = floor(iterations/10);
@@ -361,20 +366,24 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
         if(showProgress){
             if(i % progressStep == 0){
+                pybind11::gil_scoped_acquire acquire;
                 pybind11::print("Chain",chainId," Recorded iterations: ",progressCounter * 10,"%");
+                pybind11::gil_scoped_release release;
                 progressCounter++;
             }
         }
     }
     if(showProgress){
+        pybind11::gil_scoped_acquire acquire;
         pybind11::print("Chain",chainId," Recorded iterations: 100%");
+        pybind11::gil_scoped_release release;
     }
 
     return;
 }
 std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
                           int ignored_iterations, int iterations, int nChains,
-                          int K, int Kc, double alpha, double alphac, double sigmaWidth, std::vector<std::vector<double>> initial_conditions, bool showProgress){
+                          int K, int Kc, double alpha, double alphac, double sigmaWidth, std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
 
     //Variable to check if initialised
     bool initialised = false;
@@ -410,15 +419,16 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
 
     //Create threads
     std::vector<std::thread> chains;
-    for(unsigned int i = 0; i < nChains; i++){
+    for(int i = 0; i < nChains; i++){
         int a = i*iterations;
+        int seedchain = seed+i;
         chains.push_back(std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
                                 ignored_iterations, iterations, nChains,
                                 K, Kc, alpha, alphac, sigmaWidth,
-                                initialised, showProgress)); //Need explicit by reference std::refs
+                                initialised, showProgress, seedchain)); //Need explicit by reference std::refs
     }
     //Wait for rejoining
-    for(unsigned int i = 0; i < nChains; i++){
+    for(int i = 0; i < nChains; i++){
         chains[i].join();
     }
     

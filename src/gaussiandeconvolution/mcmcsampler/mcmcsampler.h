@@ -26,9 +26,9 @@ void Gibbs_convolved_step(std::mt19937 &, std::vector<double> &, std::vector<dou
                           double);
 void chain(int, std::vector<std::vector<double>> &, std::vector<double> &, std::vector<double> &,                          
                                 int, int, int,
-                                int, int, double, double, double, bool, bool);
+                                int, int, double, double, double, bool, bool, int);
 std::vector<std::vector<double>> fit(std::vector<double> &, std::vector<double>&,
                           int, int, int,
-                          int, int, double, double, double, std::vector<std::vector<double>>, bool);
+                          int, int, double, double, double, std::vector<std::vector<double>>, bool, int);
 
 #endif

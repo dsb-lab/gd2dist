@@ -4,9 +4,9 @@
 #include <iostream>
 #include "gdposteriormodel.h"
 
-gdposteriormodel::gdposteriormodel(std::vector<double> dataNoise, std::vector<double> dataConvolution, int k, int kc){
-    dataNoise = dataNoise;
-    dataConvolution = dataConvolution;
+gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
+    dataNoise = datanoise;
+    dataConvolution = dataconvolution;
     K = k;
     Kc = kc;
     x.assign(10000,0);
@@ -18,13 +18,13 @@ gdposteriormodel::gdposteriormodel(std::vector<double> dataNoise, std::vector<do
     for(int i = 1; i < 10000; i++){
         normcdf[i] += normcdf[i-1];
     }
-
 }
 
 double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
     double likelihood =  0;
     double max = -INFINITY;
     std::vector<double> exponent(K*Kc,0);
+    double total = 0;
 
     for(int i = 0; i < dataNoise.size(); i++){
         //Compute exponents and find the maximum
@@ -36,7 +36,7 @@ double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
             }
         }
         //Compute the
-        double total = 0;
+        total = 0;
         for(int j = 0; j < K; j++){
             total += parameters[j]*std::exp(exponent[j]-max)*std::sqrt(1/(2*M_PI*std::pow(parameters[2*K+j],2)));
         }
@@ -55,7 +55,7 @@ double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
             }
         }
         //Compute the
-        double total = 0;
+        total = 0;
         for(int j = 0; j < K; j++){
             for(int k = 0; k < Kc; k++){
                 total += parameters[j]*parameters[3*K+k]*std::exp(exponent[j*Kc+k]-max)

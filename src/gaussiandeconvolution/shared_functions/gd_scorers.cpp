@@ -31,7 +31,7 @@ double aut_norm_mixt_logpdf(double x, std::vector<double> parameters, int K, int
     //Compute the loglikelihood of the mixture
     for(int i = 0; i < K; i++){
         st = std::pow(parameters[2*K+i],2);
-        value += parameters[i]*std::exp(exponent[i]-max)/std::sqrt(1/2/M_PI/st);
+        value += parameters[i]*std::exp(exponent[i]-max)*std::sqrt(1/(2*M_PI*st));
     }
     value = std::log(value)+max;
 
@@ -58,7 +58,7 @@ double deconv_norm_mixt_logpdf(double x, std::vector<double> parameters, int K, 
 
     for(int j = 0; j < Kc; j++){
         st = std::pow(parameters[3*K+2*Kc+j],2);
-        value += parameters[3*K+j]*std::exp(exponent[j]-max)/std::sqrt(1/2/M_PI/st);
+        value += parameters[3*K+j]*std::exp(exponent[j]-max)*std::sqrt(1/(2*M_PI*st));
     }
 
     value = std::log(value)+max;
@@ -88,7 +88,7 @@ double conv_norm_mixt_logpdf(double x, std::vector<double> parameters, int K, in
     for(int i = 0; i < K; i++){
         for(int j = 0; j < Kc; j++){
             st = std::pow(parameters[2*K+i],2)+std::pow(parameters[3*K+2*Kc+j],2);
-            value += parameters[i]*parameters[3*K+j]*std::exp(exponent[K*i+j]-max)/std::sqrt(1/2/M_PI/st);
+            value += parameters[i]*parameters[3*K+j]*std::exp(exponent[K*i+j]-max)*std::sqrt(1/(2*M_PI*st));
         }
     }
     value = std::log(value)+max;
@@ -120,7 +120,7 @@ std::vector<std::vector<double>> score_autofluorescence(std::vector<std::vector<
         values[0][i] = mean(aux[i]);
         per = percentile(aux[i], percentiles);
         for(int j = 0; j < psize; j++){
-            values[j][i] = per[j];
+            values[1+j][i] = per[j];
         }
     }
 
@@ -146,7 +146,7 @@ std::vector<std::vector<double>> score_autofluorescence(std::vector<std::vector<
         values[0][i] = mean(aux[i]);
         per = percentile(aux[i], percentiles);
         for(int j = 0; j < psize; j++){
-            values[j][i] = per[j];
+            values[1+j][i] = per[j];
         }
     }
 
@@ -176,7 +176,7 @@ std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<dou
         values[0][i] = mean(aux[i]);
         per = percentile(aux[i], percentiles);
         for(int j = 0; j < psize; j++){
-            values[j][i] = per[j];
+            values[1+j][i] = per[j];
         }
     }
 
@@ -202,7 +202,7 @@ std::vector<std::vector<double>> score_deconvolution(std::vector<std::vector<dou
         values[0][i] = mean(aux[i]);
         per = percentile(aux[i], percentiles);
         for(int j = 0; j < psize; j++){
-            values[j][i] = per[j];
+            values[1+j][i] = per[j];
         }
     }
 
@@ -232,7 +232,7 @@ std::vector<std::vector<double>> score_convolution(std::vector<std::vector<doubl
         values[0][i] = mean(aux[i]);
         per = percentile(aux[i], percentiles);
         for(int j = 0; j < psize; j++){
-            values[j][i] = per[j];
+            values[1+j][i] = per[j];
         }
     }
 
@@ -258,7 +258,7 @@ std::vector<std::vector<double>> score_convolution(std::vector<std::vector<doubl
         values[0][i] = mean(aux[i]);
         per = percentile(aux[i], percentiles);
         for(int j = 0; j < psize; j++){
-            values[j][i] = per[j];
+            values[1+j][i] = per[j];
         }
     }
 

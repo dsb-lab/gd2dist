@@ -13,10 +13,10 @@ namespace py = pybind11;
 PYBIND11_MODULE(mcmcposteriorsampler, m) {
     m.doc() = "Gaussian deconvolution library"; // optional module docstring
 
-    m.def("fit", &fit, "Function for the fit process of the mcmc model",
+    m.def("fit", &fit, py::call_guard<py::gil_scoped_release>(), "Function for the fit process of the mcmc model",
         py::arg("data"), py::arg("datac"), py::arg("ignored_iterations"), py::arg("iterations"), py::arg("nChains"),
         py::arg("K"), py::arg("Kc"), py::arg("alpha"), py::arg("alphac"), py::arg("sigmaWidth"),
-        py::arg("initial_conditions") = std::vector<double>{}, py::arg("showProgress") = true);
+        py::arg("initial_conditions") = std::vector<double>{}, py::arg("showProgress"), py::arg("seed"));
 
     /*m.def("fit", [](std::vector<double> & data, std::vector<double>& datac,
                     int ignored_iterations, int iterations, int nChains,
