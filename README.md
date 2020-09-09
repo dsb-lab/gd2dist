@@ -21,7 +21,7 @@ In the gaussian deconvolution folder, create the binary installation.
 python setup.py bdist_wheel
 ```
 
-And install it.
+This will generate a wheel in automatically created `dist` folder. Now, we can install it.
 
 ```shell
 pip install ./dist/*
