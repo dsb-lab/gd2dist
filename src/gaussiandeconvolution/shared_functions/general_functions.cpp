@@ -32,7 +32,7 @@ std::vector<double> percentile(std::vector<double>& x, std::vector<double>& perc
         if(pos < x.size()-2){
             value[i] = (aux[pos]+aux[pos+1])/2;
         }else{
-            value[i] = aux[pos];
+            value[i] = aux[x.size()-1];
         }
     }
 
@@ -146,7 +146,7 @@ std::vector<int> choicepos(int sup, int nsamples){
         throw std::invalid_argument("superior (sup) has to be bigger than 0\n");
     }
 
-    std::uniform_int_distribution<int> unif(0,sup);
+    std::uniform_int_distribution<int> unif(0,sup-1);
     std::vector<int> samples(nsamples, 0);
 
     for( int i = 0; i < nsamples; i++){
