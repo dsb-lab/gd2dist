@@ -7,7 +7,7 @@ Package which allow the deconvolution of two random variables using bayesian app
 The package can be installed from the PyPi repository with the command:
 
 ```shell
-pip install gaussiandeconvolution
+pip install gd2dist
 ```
 
 The package is compiled for most part of usual operating systems. In case of problems, you can always compile the package from the git repository. The requirements for installation are:
@@ -37,7 +37,7 @@ Consider that we have two arrays of data, one with some noise `dataNoise` and th
 Import the package
 
 ```python
-import gaussiandeconvolution as gd
+import gd2dist as gd
 ```
 
 Declare one of the two models. The models consider by default one gaussian for the noise and one gaussian for the convolved data. Consider that we want to fit the noise to one and the convolved data with three.
