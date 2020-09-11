@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="gaussiandeconvolution",
+    name="gd2dist",
     version="0.0.1",
     description="A gaussian deconvolution package",
     author='Gabriel Torregrosa Cortes',
@@ -18,9 +18,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    packages=['gaussiandeconvolution', 'gaussiandeconvolution/nestedsampler', 'gaussiandeconvolution/mcmcsampler', 'gaussiandeconvolution/shared_functions'],
+    packages=['gd2dist', 'gd2dist/nestedsampler', 'gd2dist/mcmcsampler', 'gd2dist/shared_functions'],
     package_dir={'': 'src'},
-    cmake_install_dir='src/gaussiandeconvolution',
+    cmake_install_dir='src/gd2dist',
     python_requires = ">=3.5",
     install_requires = ["numpy","scipy","dynesty","pandas"]
 )
