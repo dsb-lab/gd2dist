@@ -1,4 +1,4 @@
-# gaussDeconv2dist
+# gd2dist
 
 Package which allow the deconvolution of two random variables using bayesian approaches.
 
