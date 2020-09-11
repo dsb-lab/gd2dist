@@ -47,6 +47,8 @@ class nestedsampler(gdposteriormodel):
         """
         self.data = dataNoise
         self.datac = dataConvolution
+        self.dataMin = np.min([dataNoise,dataConvolution])
+        self.dataMax = np.max([dataNoise,dataConvolution])
 
         #separate kargs for the two different samplers functions
         #nested sampler function

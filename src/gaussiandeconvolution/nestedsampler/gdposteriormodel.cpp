@@ -88,11 +88,11 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < K; i++){
-        transformed[K+i] = 2*uniform[K+i]-1;
+        transformed[K+i] = (dataMax-dataMin)*uniform[K+i]+dataMin;
     }
     //Std
     for(int i = 0; i < K; i++){
-        transformed[2*K+i] = 2*uniform[2*K+i];
+        transformed[2*K+i] = 3*(dataMax-dataMin)*uniform[2*K+i];
     }
 
     //Uniform sphere
@@ -110,11 +110,11 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+Kc+i] = 2*uniform[3*K+Kc+i]-1;
+        transformed[3*K+Kc+i] = (dataMax-dataMin)*uniform[3*K+Kc+i]+dataMin;
     }
     //Std
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+2*Kc+i] = 2*uniform[3*K+2*Kc+i];
+        transformed[3*K+2*Kc+i] = 3*(dataMax-dataMin)*uniform[3*K+2*Kc+i];
     }
 
     return transformed;

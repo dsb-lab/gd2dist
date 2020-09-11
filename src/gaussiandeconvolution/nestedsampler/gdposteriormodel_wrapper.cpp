@@ -22,5 +22,7 @@ PYBIND11_MODULE(gdposteriormodel, m) {
         .def_readwrite("Kc", &gdposteriormodel::Kc)
         .def_readwrite("data", &gdposteriormodel::dataNoise)
         .def_readwrite("datac", &gdposteriormodel::dataConvolution)
+        .def_readwrite("dataMin", &gdposteriormodel::dataMin)
+        .def_readwrite("dataMax", &gdposteriormodel::dataMax)
         ;
 }
