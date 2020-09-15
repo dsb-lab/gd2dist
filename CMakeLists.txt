@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14...3.17)
 
-project(gaussiandeconvolution VERSION "0.1")
+project(gd2dist VERSION "0.1")
 
 # Fetch pybind11
 include(FetchContent)
@@ -16,27 +16,27 @@ include(GNUInstallDirs)
 
 set(python_module_name1 gdposteriormodel)
 pybind11_add_module(${python_module_name1} MODULE 
-  src/gaussiandeconvolution/nestedsampler/gdposteriormodel_wrapper.cpp
-  src/gaussiandeconvolution/nestedsampler/gdposteriormodel.cpp
+  src/gd2dist/nestedsampler/gdposteriormodel_wrapper.cpp
+  src/gd2dist/nestedsampler/gdposteriormodel.cpp
 )
 install(TARGETS ${python_module_name1} DESTINATION ./nestedsampler)
 
 set(python_module_name2 mcmcposteriorsampler)
 pybind11_add_module(${python_module_name2} MODULE 
-  src/gaussiandeconvolution/mcmcsampler/mcmcsampler_wrapper.cpp
-  src/gaussiandeconvolution/mcmcsampler/mcmcsampler.cpp
-  src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
+  src/gd2dist/mcmcsampler/mcmcsampler_wrapper.cpp
+  src/gd2dist/mcmcsampler/mcmcsampler.cpp
+  src/gd2dist/shared_functions/probability_distributions.cpp
   )
 install(TARGETS ${python_module_name2} DESTINATION ./mcmcsampler)
 
 set(python_module_name3 shared_functions)
 pybind11_add_module(${python_module_name3} MODULE 
-  src/gaussiandeconvolution/shared_functions/shared_functions_wrapper.cpp
-  src/gaussiandeconvolution/shared_functions/general_functions.cpp
-  src/gaussiandeconvolution/shared_functions/gd_samplers.cpp
-  src/gaussiandeconvolution/shared_functions/gd_scorers.cpp
-  src/gaussiandeconvolution/shared_functions/global_random_generator.cpp
-  src/gaussiandeconvolution/shared_functions/probability_distributions.cpp
-  src/gaussiandeconvolution/shared_functions/mcmc_convergence_statistics.cpp
+  src/gd2dist/shared_functions/shared_functions_wrapper.cpp
+  src/gd2dist/shared_functions/general_functions.cpp
+  src/gd2dist/shared_functions/gd_samplers.cpp
+  src/gd2dist/shared_functions/gd_scorers.cpp
+  src/gd2dist/shared_functions/global_random_generator.cpp
+  src/gd2dist/shared_functions/probability_distributions.cpp
+  src/gd2dist/shared_functions/mcmc_convergence_statistics.cpp
 )
 install(TARGETS ${python_module_name3} DESTINATION ./shared_functions)
