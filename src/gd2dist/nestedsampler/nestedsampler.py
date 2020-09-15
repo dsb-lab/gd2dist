@@ -3,6 +3,7 @@ from .gdposteriormodel import gdposteriormodel
 import numpy as np
 import inspect
 from scipy.stats import norm
+import pickle as pk
 
 from ..shared_functions import *
 
@@ -25,6 +26,7 @@ class nestedsampler(gdposteriormodel):
             nothing
         """
         gdposteriormodel.__init__(self,[],[],K,Kc)
+        self.fitted = False
 
         return
 
@@ -52,7 +54,7 @@ class nestedsampler(gdposteriormodel):
 
         #separate kargs for the two different samplers functions
         #nested sampler function
-        nestedsampler_args = [k for k, v in inspect.signature(dn.DynamicNestedSampler).parameters.items()]
+        nestedsampler_args = [k for k, v in inspect.signature(dn.NestedSampler).parameters.items()]
         nestedsampler_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in nestedsampler_args}
         if not ("sample" in nestedsampler_dict.keys()):
             nestedsampler_dict["sample"] = "rslice"
@@ -62,12 +64,88 @@ class nestedsampler(gdposteriormodel):
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
         gdposteriormodel.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
-        self.dynestyModel = dn.DynamicNestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+        self.dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
         self.dynestyModel.run_nested(**run_nested_dict)
         self.samples = self.dynestyModel.results["samples"]
         weightMax = np.max(self.dynestyModel.results["logz"])
         self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
         self.weights = self.weights/np.sum(self.weights)
+
+        self.fitted = True
+
+        return
+
+    def prune(self, order = -1):
+        """
+        Prune the number of samples to remove samples with weights orders of magnitude lower than the main one. 
+        This may speed up drawing samples when the number of draws is huge.
+
+        Parameters
+        --------------
+            order: int, order of manitude below which prune the samples
+
+        returns:
+            nothing 
+        """
+
+        if order == -1:
+
+            weightMax = np.max(self.dynestyModel.results["logz"])
+            self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
+            self.weights = self.weights/np.sum(self.weights)
+
+        else:
+            weightMax = np.max(self.dynestyModel.results["logz"])
+            self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
+            self.weights = self.weights/np.sum(self.weights)
+
+            select = (self.weights>self.weights.max*10**-order)
+            self.weights = self.weights[select]
+            self.samples = self.samples[select]
+
+        return
+
+    def save(self, name):
+        """
+        Pickle save the model.
+
+        Parameters
+        ----------------
+            name: string, name in which to store the model
+
+        Return:
+            nothing
+        """
+        if self.fitted:
+            pickling_on = open(name+".pickle","wb")
+            pk.dump({K:self.K, Kc:self.Kc, results:self.dynestyModel.results}, pickling_on)
+            pickling_on.close()
+        else:
+            print("The model has not been fitted so there is nothing to save.")
+        return
+
+    def load(self, name):
+        """
+        Pickle load the model.
+
+        Parameters
+        ----------------
+            name: string, name from which to recover the model
+
+        Return:
+            nothing
+        """
+        pickle_off = open(name+".pickle","rb")
+        aux = pk.load(pickle_off)
+        pickle_off.close()
+
+        self.K = aux["K"]
+        self.Kc = aux["Kc"]
+        self.dynestyModel = dn.NestedSampler()
+        self.dynestyModel.results = aux["results"]
+        self.prune()
+
+        self.fitted = True
 
         return
 

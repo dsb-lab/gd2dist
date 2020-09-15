@@ -2,6 +2,7 @@ from .mcmcposteriorsampler import fit
 from scipy.stats import norm
 import pandas as pd
 import numpy as np
+import pickle as pk
 
 from ..shared_functions import *
 
@@ -28,6 +29,8 @@ class mcmcsampler:
         self.Kc = Kc
         self.alpha = alpha
         self.alphac = alphac
+
+        self.fitted = False
 
         return
 
@@ -61,6 +64,58 @@ class mcmcsampler:
         self.sigmawidth = sigmawidth
         self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, sigmawidth, initial_conditions, show_progress, seed))
         
+        self.fitted = True
+
+        return
+
+    def save(self, name):
+        """
+        Pickle save the model.
+
+        Parameters
+        ----------------
+            name: string, name in which to store the model
+
+        Return:
+            nothing
+        """
+        if self.fitted:
+            pickling_on = open(name+".pickle","wb")
+            pk.dump({K:self.K, Kc:self.Kc, alpha: self.alpha, alphac: self.alphac, iterations: self.iterations,
+                     ignored_iterations: self.ignored_iterations,
+                     chains:self.chains, sigmawidth:self.sigmawidth, samples:self.samples}, pickling_on)
+            pickling_on.close()
+        else:
+            print("The model has not been fitted so there is nothing to save.")
+        return
+
+    def load(self, name):
+        """
+        Pickle load the model.
+
+        Parameters
+        ----------------
+            name: string, name from which to recover the model
+
+        Return:
+            nothing
+        """
+        pickle_off = open(name+".pickle","rb")
+        aux = pk.load(pickle_off)
+        pickle_off.close()
+
+        self.K = aux["K"]
+        self.Kc = aux ["Kc"]
+        self.alpha = aux["alpha"]
+        self.alphac = aux["alphac"]
+        self.iterations = aux["iterations"]
+        self.ignored_iterations = aux["ignored_iterations"]
+        self.chains = aux["chains"]
+        self.sigmawidth = aux["sigmawidth"]
+        self.samples = aux["samples"]
+
+        self.fitted = True
+
         return
 
     def sample_autofluorescence(self, size = 1):
