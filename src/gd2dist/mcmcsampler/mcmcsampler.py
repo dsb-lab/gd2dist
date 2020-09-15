@@ -81,9 +81,9 @@ class mcmcsampler:
         """
         if self.fitted:
             pickling_on = open(name+".pickle","wb")
-            pk.dump({K:self.K, Kc:self.Kc, alpha: self.alpha, alphac: self.alphac, iterations: self.iterations,
-                     ignored_iterations: self.ignored_iterations,
-                     chains:self.chains, sigmawidth:self.sigmawidth, samples:self.samples}, pickling_on)
+            pk.dump({"K":self.K, "Kc":self.Kc, "alpha": self.alpha, "alphac": self.alphac, "iterations": self.iterations,
+                     "ignored_iterations": self.ignored_iterations,
+                     "chains":self.chains, "sigmawidth":self.sigmawidth, "samples":self.samples}, pickling_on)
             pickling_on.close()
         else:
             print("The model has not been fitted so there is nothing to save.")
@@ -130,7 +130,7 @@ class mcmcsampler:
         -------------
             list: list, 1D array with *size* samples from the model
         """
-        return  sample_autofluorescence(self.samples,self.K,self.Kc,size)
+        return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size))
 
     def sample_deconvolution(self, size = 1):
         """
@@ -144,7 +144,7 @@ class mcmcsampler:
         -------------
             list: list, 1D array with *size* samples from the model
         """
-        return  sample_deconvolution(self.samples,self.K,self.Kc,size)
+        return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size))
 
     def sample_convolution(self, size = 1):
         """
@@ -158,7 +158,7 @@ class mcmcsampler:
         -------------
             list: list, 1D array with *size* samples from the model
         """
-        return  sample_convolution(self.samples,self.K,self.Kc,size)
+        return  np.array(sample_convolution(self.samples,self.K,self.Kc,size))
 
     def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 100):
         """
@@ -175,7 +175,7 @@ class mcmcsampler:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  score_autofluorescence(self.samples, x, self.K, self.Kc, percentiles, size)
+        return  np.array(score_autofluorescence(self.samples, x, self.K, self.Kc, percentiles, size))
 
     def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 100):
         """
@@ -192,7 +192,7 @@ class mcmcsampler:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  score_deconvolution(self.samples, x, self.K, self.Kc, percentiles, size)
+        return  np.array(score_deconvolution(self.samples, x, self.K, self.Kc, percentiles, size))
 
     def score_convolution(self, x, percentiles = [0.05, 0.95], size = 100):
         """
@@ -209,7 +209,7 @@ class mcmcsampler:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  score_convolution(self.samples, x, self.K, self.Kc, percentiles, size)
+        return  np.array(score_convolution(self.samples, x, self.K, self.Kc, percentiles, size))
 
     def sampler_statistics(self, sort="weight"):
         """

@@ -64,12 +64,16 @@ class nestedsampler(gdposteriormodel):
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
         gdposteriormodel.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
-        self.dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
-        self.dynestyModel.run_nested(**run_nested_dict)
-        self.samples = self.dynestyModel.results["samples"]
-        weightMax = np.max(self.dynestyModel.results["logz"])
-        self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
+        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+        dynestyModel.run_nested(**run_nested_dict)
+        self.results = {}
+        self.results["samples"] = dynestyModel.results["samples"]
+        self.results["logwt"] = dynestyModel.results["logwt"]
+        self.results["evidence"] =  dynestyModel.results["logz"][-1]
+        weightMax = np.max(self.results["logwt"])
+        self.weights = np.exp(self.results["logwt"]-weightMax)
         self.weights = self.weights/np.sum(self.weights)
+        self.samples = self.results["samples"]
 
         self.fitted = True
 
@@ -90,18 +94,19 @@ class nestedsampler(gdposteriormodel):
 
         if order == -1:
 
-            weightMax = np.max(self.dynestyModel.results["logz"])
-            self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
+            weightMax = np.max(self.results["logwt"])
+            self.weights = np.exp(self.results["logwt"]-weightMax)
             self.weights = self.weights/np.sum(self.weights)
+            self.samples = self.results["samples"]
 
         else:
-            weightMax = np.max(self.dynestyModel.results["logz"])
-            self.weights = np.exp(self.dynestyModel.results["logz"]-weightMax)
+            weightMax = np.max(self.results["logwt"])
+            self.weights = np.exp(self.results["logwt"]-weightMax)
             self.weights = self.weights/np.sum(self.weights)
 
-            select = (self.weights>self.weights.max*10**-order)
+            select = (self.weights>self.weights.max()*10**-order)
             self.weights = self.weights[select]
-            self.samples = self.samples[select]
+            self.samples = self.results["samples"][select]
 
         return
 
@@ -116,9 +121,10 @@ class nestedsampler(gdposteriormodel):
         Return:
             nothing
         """
+
         if self.fitted:
             pickling_on = open(name+".pickle","wb")
-            pk.dump({K:self.K, Kc:self.Kc, results:self.dynestyModel.results}, pickling_on)
+            pk.dump({"K":self.K, "Kc":self.Kc, "weights":self.results["logwt"], "samples":self.results["samples"], "evidence":self.results["evidence"]}, pickling_on)
             pickling_on.close()
         else:
             print("The model has not been fitted so there is nothing to save.")
@@ -141,8 +147,11 @@ class nestedsampler(gdposteriormodel):
 
         self.K = aux["K"]
         self.Kc = aux["Kc"]
-        self.dynestyModel = dn.NestedSampler()
-        self.dynestyModel.results = aux["results"]
+        self.results = {}
+        self.results["logwt"] = aux["weights"]
+        self.results["samples"] = aux["samples"]
+        self.results["evidence"] = aux["evidence"]
+        
         self.prune()
 
         self.fitted = True
@@ -161,7 +170,7 @@ class nestedsampler(gdposteriormodel):
             list: list, 1D array with *size* samples from the model
         """
 
-        return  sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size)
+        return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size))
 
     def sample_deconvolution(self, size = 1):
         """
@@ -175,7 +184,7 @@ class nestedsampler(gdposteriormodel):
             list: list, 1D array with *size* samples from the model
         """
 
-        return  sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size)
+        return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size))
 
     def sample_convolution(self, size = 1):
         """
@@ -189,7 +198,7 @@ class nestedsampler(gdposteriormodel):
             list: list, 1D array with *size* samples from the model
         """
 
-        return  sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size)
+        return  np.array(sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size))
 
     def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -205,7 +214,7 @@ class nestedsampler(gdposteriormodel):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  score_autofluorescence(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size)
+        return  np.array(score_autofluorescence(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size))
 
     def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -221,7 +230,7 @@ class nestedsampler(gdposteriormodel):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  score_deconvolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size)
+        return  np.array(score_deconvolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size))
 
     def score_convolution(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -237,4 +246,4 @@ class nestedsampler(gdposteriormodel):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  score_convolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size)
+        return  np.array(score_convolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size))
