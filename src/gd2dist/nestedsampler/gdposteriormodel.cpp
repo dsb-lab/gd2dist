@@ -14,8 +14,8 @@ gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<do
     x.assign(10000,0);
     normcdf.assign(10000,0);
     for(int i = 0; i < 10000; i++){
-        x[i] = (i-5000)*0.01;
-        normcdf[i] = std::exp(-(std::pow(x[i],2)/2))*std::sqrt(1/M_PI/2)*0.01;
+        x[i] = i*0.01;
+        normcdf[i] = 2*std::exp(-(std::pow(x[i],2)/2))*std::sqrt(1/M_PI/2)*0.01;
     }
     for(int i = 1; i < 10000; i++){
         normcdf[i] += normcdf[i-1];
