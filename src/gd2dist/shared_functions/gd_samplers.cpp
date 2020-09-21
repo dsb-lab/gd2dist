@@ -157,3 +157,149 @@ std::vector<double> sample_convolution(std::vector<std::vector<double>>& postSam
 
     return samples;
 }
+
+std::vector<double> sample_autofluorescence_single(std::vector<std::vector<double>>& postSamples, int K, int Kc, int nsamples, int pos){
+
+    std::normal_distribution<double> norm(0,1);
+    std::vector<double> samples(nsamples, 0);
+
+    int normpos;
+    std::vector<double> aux;
+
+    for( int i = 0; i < nsamples; i++){
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin(),postSamples[pos].begin()+K);
+        normpos = choicepos(aux)[0];
+        //Sample from the gaussian
+        norm = std::normal_distribution<double>(postSamples[pos][K+normpos],postSamples[pos][2*K+normpos]);
+        samples[i] = norm(AUX_R);
+    }
+
+
+    return samples;
+}
+
+std::vector<double> sample_autofluorescence_single(std::vector<std::vector<double>>& postSamples, int K, int Kc, std::vector<double>& weights, int nsamples, int pos){
+
+    std::normal_distribution<double> norm(0,1);
+    std::vector<double> samples(nsamples, 0);
+
+    int normpos;
+    std::vector<double> aux;
+
+    //Choose from the samples
+    for( int i = 0; i < nsamples; i++){
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin(),postSamples[pos].begin()+K);
+        normpos = choicepos(aux)[0];
+        //Sample from the gaussian
+        norm = std::normal_distribution<double>(postSamples[pos][K+normpos],postSamples[pos][2*K+normpos]);
+        samples[i] = norm(AUX_R);
+    }
+
+
+    return samples;
+}
+
+std::vector<double> sample_deconvolution_single(std::vector<std::vector<double>>& postSamples, int K, int Kc, int nsamples, int pos){
+
+    std::normal_distribution<double> norm(0,1);
+    std::vector<double> samples(nsamples, 0);
+
+    int normpos;
+    std::vector<double> aux;
+
+    //Choose from the samples
+    for( int i = 0; i < nsamples; i++){
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin()+3*K,postSamples[pos].begin()+3*K+Kc);
+        normpos = choicepos(aux)[0];
+        //Sample from the gaussian
+        norm = std::normal_distribution<double>(postSamples[pos][3*K+Kc+normpos],postSamples[pos][3*K+2*Kc+normpos]);
+        samples[i] = norm(AUX_R);
+    }
+
+
+    return samples;
+}
+
+std::vector<double> sample_deconvolution_single(std::vector<std::vector<double>>& postSamples, int K, int Kc, std::vector<double>& weights, int nsamples, int pos){
+
+    std::normal_distribution<double> norm(0,1);
+    std::vector<double> samples(nsamples, 0);
+
+    int normpos;
+    std::vector<double> aux;
+
+    //Choose from the samples
+    for( int i = 0; i < nsamples; i++){
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin()+3*K,postSamples[pos].begin()+3*K+Kc);
+        normpos = choicepos(aux)[0];
+        //Sample from the gaussian
+        norm = std::normal_distribution<double>(postSamples[pos][3*K+Kc+normpos],postSamples[pos][3*K+2*Kc+normpos]);
+        samples[i] = norm(AUX_R);
+    }
+
+
+    return samples;
+}
+
+std::vector<double> sample_convolution_single(std::vector<std::vector<double>>& postSamples, int K, int Kc, int nsamples, int pos){
+
+    std::normal_distribution<double> norm(0,1);
+    std::vector<double> samples(nsamples, 0);
+
+    int normpos;
+    int normpos2;
+    std::vector<double> aux;
+
+    //Choose from the samples
+    double st;
+    double mean;
+    for( int i = 0; i < nsamples; i++){
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin(),postSamples[pos].begin()+K);
+        normpos = choicepos(aux)[0];
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin()+3*K,postSamples[pos].begin()+3*K+Kc);
+        normpos2 = choicepos(aux)[0];
+        //Sample from the gaussian
+        mean = postSamples[pos][K+normpos]+postSamples[pos][3*K+Kc+normpos2];
+        st = std::sqrt(std::pow(postSamples[pos][2*K+normpos],2)+std::pow(postSamples[pos][3*K+2*Kc+normpos2],2));
+        norm = std::normal_distribution<double>(mean,st);
+        samples[i] = norm(AUX_R);
+    }
+
+
+    return samples;
+}
+
+std::vector<double> sample_convolution_single(std::vector<std::vector<double>>& postSamples, int K, int Kc, std::vector<double>& weights, int nsamples, int pos){
+
+    std::normal_distribution<double> norm(0,1);
+    std::vector<double> samples(nsamples, 0);
+
+    int normpos;
+    int normpos2;
+    std::vector<double> aux;
+
+    //Choose from the samples
+    double st;
+    double mean;
+    for( int i = 0; i < nsamples; i++){
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin(),postSamples[pos].begin()+K);
+        normpos = choicepos(aux)[0];
+        //Choose from the gaussians of the sample
+        aux = std::vector<double>(postSamples[pos].begin()+3*K,postSamples[pos].begin()+3*K+Kc);
+        normpos2 = choicepos(aux)[0];
+        //Sample from the gaussian
+        mean = postSamples[pos][K+normpos]+postSamples[pos][3*K+Kc+normpos2];
+        st = std::sqrt(std::pow(postSamples[pos][2*K+normpos],2)+std::pow(postSamples[pos][3*K+2*Kc+normpos2],2));
+        norm = std::normal_distribution<double>(mean,st);
+        samples[i] = norm(AUX_R);
+    }
+
+    return samples;
+}

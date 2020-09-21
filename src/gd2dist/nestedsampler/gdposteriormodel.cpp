@@ -4,6 +4,8 @@
 #include <iostream>
 #include "gdposteriormodel.h"
 
+#include "pybind11/pybind11.h"
+
 gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
     dataNoise = datanoise;
     dataConvolution = dataconvolution;
@@ -77,10 +79,10 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     //Uniform sphere
     for(int i = 0; i < K; i++){
         pos = 0;
-        while(uniform[pos] > normcdf[pos]){
+        while(uniform[i] > normcdf[pos] && pos < 9998){
             pos++;
         }
-        transformed[i] = (x[pos]+x[pos-1])/2;
+        transformed[i] = abs(x[pos]+x[pos-1])/2;
         total += transformed[i];
     }
     for(int i = 0; i < K; i++){
@@ -99,10 +101,10 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     total = 0;
     for(int i = 0; i < Kc; i++){
         pos = 0;
-        while(uniform[pos] > normcdf[pos]){
+        while(uniform[3*K+i] > normcdf[pos] && pos < 9998){
             pos++;
         }
-        transformed[3*K+i] = (x[pos]+x[pos-1])/2;
+        transformed[3*K+i] = abs(x[pos]+x[pos-1])/2;
         total += transformed[3*K+i];
     }
     for(int i = 0; i < Kc; i++){

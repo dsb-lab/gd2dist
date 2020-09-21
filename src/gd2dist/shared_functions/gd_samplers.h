@@ -16,4 +16,16 @@ std::vector<double> sample_deconvolution(std::vector<std::vector<double>>&, int,
 std::vector<double> sample_convolution(std::vector<std::vector<double>>&, int, int, int);
 std::vector<double> sample_convolution(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int);
 
+//Samplers autofluorescence
+std::vector<double> sample_autofluorescence_single(std::vector<std::vector<double>>&, int, int, int, int);
+std::vector<double> sample_autofluorescence_single(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int);
+
+//Samplers deconvolution
+std::vector<double> sample_deconvolution_single(std::vector<std::vector<double>>&, int, int, int, int);
+std::vector<double> sample_deconvolution_single(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int);
+
+//Samplers convolution
+std::vector<double> sample_convolution_single(std::vector<std::vector<double>>&, int, int, int, int);
+std::vector<double> sample_convolution_single(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int);
+
 #endif
