@@ -106,6 +106,7 @@ class nestedsampler(gdposteriormodel):
 
             select = (self.weights>self.weights.max()*10**-order)
             self.weights = self.weights[select]
+            self.weights = self.weights/np.sum(self.weights)
             self.samples = self.results["samples"][select]
 
         return
