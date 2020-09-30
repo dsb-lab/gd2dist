@@ -91,7 +91,7 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     //Mean
     transformed[K] = (dataMax-dataMin)*std::pow(uniform[K],1.0/K)+dataMin;
     for(int i = 1; i < K; i++){
-        transformed[K+i] = transformed[K+i-1]*std::pow(uniform[K+i],1/(K-i))+dataMin;
+        transformed[K+i] = transformed[K+i-1]*std::pow(uniform[K+i],1.0/(K-i))+dataMin;
     }
     //Std
     for(int i = 0; i < K; i++){
@@ -114,7 +114,7 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     //Mean
     transformed[3*K+Kc] = (dataMax-dataMin)*std::pow(uniform[3*K+Kc],1.0/K)+dataMin;
     for(int i = 1; i < Kc; i++){
-        transformed[3*K+Kc+i] = transformed[3*K+Kc+i-1]*std::pow(uniform[3*K+Kc+i],1/(Kc-i))+dataMin;
+        transformed[3*K+Kc+i] = transformed[3*K+Kc+i-1]*std::pow(uniform[3*K+Kc+i],1.0/(Kc-i))+dataMin;
     }
     //Std
     for(int i = 0; i < Kc; i++){
