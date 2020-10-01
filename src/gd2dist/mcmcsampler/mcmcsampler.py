@@ -34,7 +34,7 @@ class mcmcsampler:
 
         return
 
-    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, sigmawidth = 0.1, initial_conditions = [], show_progress = True, seed = 0):
+    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, theta = None, kconst = 2, initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
 
@@ -46,7 +46,8 @@ class mcmcsampler:
             iterations: int, number of samples to be drawn and stored for each chain during the sampling
             ignored_iterations: int, number of samples to be drawn and ignored for each chain during the sampling
             chains: int, number of independently initialised realisations of the markov chain
-            sigmawidth: float, standard deviation of the step proposal given for the update of the variance of the gaussian components
+            theta: float, parameter of the prior gamma distribution
+            kconst: float, parameter k of the prior gamma distribution
             initialConditions: list, 1D array with all the parameters required to initialise manually all the components of all the chains the chains
             show_progress: bool, indicate if the method should show the progress in the generation of the new data
             seed: int, value to initialise the random generator and obtain reproducible results
@@ -61,8 +62,14 @@ class mcmcsampler:
         self.iterations = iterations
         self.ignored_iterations = ignored_iterations
         self.chains = chains
-        self.sigmawidth = sigmawidth
-        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, sigmawidth, initial_conditions, show_progress, seed))
+        self.theta = theta
+        self.kconst = kconst 
+        
+        #Assign an approximate theta to make the prior vague
+        if theta = None:
+            self.theta = np.std(datac)
+
+        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, theta, kconst, initial_conditions, show_progress, seed))
         
         self.fitted = True
 
