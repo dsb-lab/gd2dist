@@ -13,7 +13,34 @@
 #include "mcmcsampler.h"
 #include "pybind11/pybind11.h"
 
-double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> sigma){
+double logLikelihood(std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
+                    std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
+                    std::vector<double>  & data, std::vector<double>  & datac){
+
+    double log = 0;
+    double max;
+
+    max = -INFINITY;
+    for (int i = 0; i < data.size(); i++){
+        for (unsigned int j = 0; j < pi.size(); j++){
+            log += std::log(pi[j])
+                +gaussian_pdf(data[i],mu[j],sigma[j]);
+        }
+    }
+
+    for (int i = 0; i < datac.size(); i++){
+        for (unsigned int j = 0; j < pi.size(); j++){
+            for (unsigned int k = 0; k < pic.size(); k++){
+                log += std::log(pic[k])+std::log(pi[j])
+                                    +gaussian_pdf(datac[i],mu[j]+muc[k],std::sqrt(std::pow(sigmac[k],2)+std::pow(sigma[j],2)));
+            }
+        }
+    }
+
+    return log;
+}
+
+double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> sigma, double theta, double kconst){
 
     double aux = 0;
     int l = sigma.size();
@@ -27,48 +54,16 @@ double effective_gamma_not_normalized(double pos, std::vector<double> n, std::ve
         aux += -n[l]*std::log(std::pow(pos,2))/2
                 -x2[l]/(2*(std::pow(pos,2)));          
     }
+    //Add prior
+    aux += -std::pow(pos,2)/theta-(kconst-1)*std::log(std::pow(pos,2));
 
     return aux;
 }
 
-void sample_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
-                             std::vector<std::vector<double>> &x2, 
-                             std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew,
-                             double sigmaWidth){
-
-        int N = sigmanew.size();
-        std::normal_distribution<double> dist(0,sigmaWidth);
-        std::uniform_real_distribution<double> uniform(0,1);
-        double loss_old;
-        double loss_new;
-        double newsigma;
-        double acceptance;
-
-        //Metropolis acceptance algorithm
-        for (int i = 0; i < N; i++){
-
-            do{
-                newsigma = dist(r)+sigmaold[i];
-            }while(newsigma <= 0);
-
-            loss_old = effective_gamma_not_normalized(sigmaold[i], n[i], x2[i], sigma); 
-            loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma);
-
-            acceptance = std::exp(loss_new-loss_old)-uniform(r);
-
-            if((acceptance > 0) && (std::isnan(acceptance)==false)){
-                sigmanew[i] = newsigma; 
-            }else{
-                sigmanew[i] = sigmaold[i];
-            }
-        }
-
-    return;
-}
-
 void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
                              std::vector<std::vector<double>> &x2, 
-                             std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew){
+                             std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew,
+                             double theta, double kconst){
 
         int N = sigmanew.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -79,49 +74,60 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
         double min;
         double max;
         double expansion = 0.5;
+        int counter;
+        double old;
 
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            loss_old = effective_gamma_not_normalized(sigmaold[i], n[i], x2[i], sigma); 
-            //Chose new height
-            loss_old += std::log(uniform(0,1));
-            //Expand
-            min = sigmaold[i]-expansion;
-            loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma);
-            while(loss_new <= loss_old;){
-                min -= expansion;
-                if(min <= 0){
-                    min = 0;
-                    break;
-                }
-                loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma);
-            }
-            max = sigmaold[i]+expansion;
-            loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma);
-            while(loss_new <= loss_old;){
-                max += expansion;
-                loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma);
-            }
-            //Sample
-            do{
-                newsigma = (max-min)*uniform(0,1)+min;
-                loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma);
-                //Adapt boundaries
-                if(loss_new < loss_old){
-                    if(newsigma < sigmaold[i]){
-                        min = newsigma;
+            old = sigmaold[i];
+            for (int j = 0; j < 10; j++){
+                loss_old = effective_gamma_not_normalized(old, n[i], x2[i], sigma, theta, kconst);
+                //Chose new height
+                loss_old += std::log(uniform(r));
+                //Expand
+                min = old-expansion;
+                loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
+                counter = 0;
+                while(loss_new > loss_old && counter < 200000){
+                    min -= expansion;
+                    if(min <= 0){
+                        min = 0.01;
+                        break;
                     }
-                    else if(newsigma > sigmaold[i]){
-                        max = newsigma;
-                    }
+                    loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
+                    counter++;
                 }
-                else{
-                    break;
+                max = old+expansion;
+                loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
+                counter = 0;
+                while(loss_new > loss_old && counter < 200000){
+                    max += expansion;
+                    loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
+                    counter++;
                 }
-            }while()
 
-            sigmanew[i] = newsigma; 
+                //Sample
+                counter = 0;
+                do{
+                    newsigma = (max-min)*uniform(r)+min;
+                    loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma, theta, kconst);
+                    //Adapt boundaries
+                    if(loss_new < loss_old){
+                        if(newsigma < old){
+                            min = newsigma;
+                        }
+                        else if(newsigma > old){
+                            max = newsigma;
+                        }
+                    }
+                    counter++;
+                }while(loss_new < loss_old && counter < 200000);
+
+                old = newsigma;
+            }
+
+            sigmanew[i] = newsigma;
         }
 
     return;
@@ -135,7 +141,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                           std::vector<double> & pinewc, std::vector<double> & munewc, std::vector<double> & sigmanewc,
                           double alphac,
                           std::vector<std::vector<std::vector<double>>> id,
-                          double sigmaWidth){
+                          double theta, double kconst){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -246,7 +252,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Sample the variances
     //sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
-    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew);
+    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, theta, kconst);
     //Sample the means
     for (unsigned int j = 0; j < K; j++){
         //Convoluted terms
@@ -288,7 +294,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Sample the variances
     //sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
-    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc);
+    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, theta, kconst);
     //Sample the means
     for (unsigned int k = 0; k < Kc; k++){
         for (unsigned int j = 0; j < K; j++){
@@ -317,7 +323,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
 void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
                                 int ignored_iterations, int iterations, int nChains,
-                                int K, int Kc, double alpha, double alphac, double sigmaWidth, bool initialised, bool showProgress, int seed){
+                                int K, int Kc, double alpha, double alphac, double theta, double kconst, bool initialised, bool showProgress, int seed){
     //Variables for the random generation
     std::mt19937 r;
     r.seed(seed);
@@ -348,14 +354,14 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         for (int i = 0; i < K; i++){
             pi[i] = 1;
             mu[i] = gaussian(r);
-            sigma[i] = std::sqrt(var);
+            sigma[i] = std::sqrt(var)/10;
         }
 
         std::normal_distribution<double> gaussianc(meanc-mean,std::sqrt(varc));
         for (int i = 0; i < Kc; i++){
             pic[i] = 1;
             muc[i] = gaussianc(r);
-            sigmac[i] = std::sqrt(varc);
+            sigmac[i] = std::sqrt(varc)/10;
         }
     }else{
         for (int i = 0; i < K; i++){
@@ -378,7 +384,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         Gibbs_convolved_step(r, data, datac,
                          pi, mu, sigma, pinew, munew, sigmanew, alpha,
                          pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
-                         id, sigmaWidth);
+                         id, theta, kconst);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
@@ -408,7 +414,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         Gibbs_convolved_step(r, data, datac,
                          pi, mu, sigma, pinew, munew, sigmanew, alpha,
                          pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
-                         id, sigmaWidth);
+                         id, theta, kconst);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
@@ -445,7 +451,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 }
 std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
                           int ignored_iterations, int iterations, int nChains,
-                          int K, int Kc, double alpha, double alphac, double sigmaWidth, std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
+                          int K, int Kc, double alpha, double alphac, double theta, double kconst, std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
 
     //Variable to check if initialised
     bool initialised = false;
@@ -486,7 +492,7 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
         int seedchain = seed+i;
         chains.push_back(std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
                                 ignored_iterations, iterations, nChains,
-                                K, Kc, alpha, alphac, sigmaWidth,
+                                K, Kc, alpha, alphac, theta, kconst,
                                 initialised, showProgress, seedchain)); //Need explicit by reference std::refs
     }
     //Wait for rejoining

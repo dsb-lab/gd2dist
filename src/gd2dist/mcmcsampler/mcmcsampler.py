@@ -34,7 +34,7 @@ class mcmcsampler:
 
         return
 
-    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, sigmawidth = 0.1, initial_conditions = [], show_progress = True, seed = 0):
+    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, theta = 10, kconst = 2, initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
 
@@ -61,8 +61,9 @@ class mcmcsampler:
         self.iterations = iterations
         self.ignored_iterations = ignored_iterations
         self.chains = chains
-        self.sigmawidth = sigmawidth
-        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, sigmawidth, initial_conditions, show_progress, seed))
+        self.theta = theta
+        self.kconst = kconst 
+        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, theta, kconst, initial_conditions, show_progress, seed))
         
         self.fitted = True
 

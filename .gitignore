@@ -13,3 +13,7 @@ docker.sh
 dist
 docs
 tests
+
+a.out
+compile.sh
+slicesampling.cpp
