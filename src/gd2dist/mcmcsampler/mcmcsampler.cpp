@@ -44,7 +44,6 @@ void sample_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n
         double newsigma;
         double acceptance;
 
-
         //Metropolis acceptance algorithm
         for (int i = 0; i < N; i++){
 
@@ -62,6 +61,67 @@ void sample_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n
             }else{
                 sigmanew[i] = sigmaold[i];
             }
+        }
+
+    return;
+}
+
+void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
+                             std::vector<std::vector<double>> &x2, 
+                             std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew){
+
+        int N = sigmanew.size();
+        std::uniform_real_distribution<double> uniform(0,1);
+        double loss_old;
+        double loss_new;
+        double newsigma;
+        double acceptance;
+        double min;
+        double max;
+        double expansion = 0.5;
+
+        //Slice sampling
+        for (int i = 0; i < N; i++){
+
+            loss_old = effective_gamma_not_normalized(sigmaold[i], n[i], x2[i], sigma); 
+            //Chose new height
+            loss_old += std::log(uniform(0,1));
+            //Expand
+            min = sigmaold[i]-expansion;
+            loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma);
+            while(loss_new <= loss_old;){
+                min -= expansion;
+                if(min <= 0){
+                    min = 0;
+                    break;
+                }
+                loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma);
+            }
+            max = sigmaold[i]+expansion;
+            loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma);
+            while(loss_new <= loss_old;){
+                max += expansion;
+                loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma);
+            }
+            //Sample
+            do{
+                newsigma = (max-min)*uniform(0,1)+min;
+                loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma);
+                //Adapt boundaries
+                if(loss_new < loss_old){
+                    if(newsigma < sigmaold[i]){
+                        min = newsigma;
+                    }
+                    else if(newsigma > sigmaold[i]){
+                        max = newsigma;
+                    }
+                }
+                else{
+                    break;
+                }
+            }while()
+
+            sigmanew[i] = newsigma; 
         }
 
     return;
@@ -185,7 +245,8 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         }
     }
     //Sample the variances
-    sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
+    //sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
+    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew);
     //Sample the means
     for (unsigned int j = 0; j < K; j++){
         //Convoluted terms
@@ -226,7 +287,8 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         }
     }
     //Sample the variances
-    sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
+    //sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
+    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc);
     //Sample the means
     for (unsigned int k = 0; k < Kc; k++){
         for (unsigned int j = 0; j < K; j++){
