@@ -17,3 +17,5 @@ tests
 a.out
 compile.sh
 slicesampling.cpp
+
+.ipynb_checkpoints
