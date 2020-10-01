@@ -66,7 +66,7 @@ class mcmcsampler:
         self.kconst = kconst 
         
         #Assign an approximate theta to make the prior vague
-        if theta = None:
+        if theta == None:
             self.theta = np.std(datac)
 
         self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, theta, kconst, initial_conditions, show_progress, seed))
