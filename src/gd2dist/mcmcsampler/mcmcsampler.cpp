@@ -55,7 +55,7 @@ double effective_gamma_not_normalized(double pos, std::vector<double> n, std::ve
                 -x2[l]/(2*(std::pow(pos,2)));          
     }
     //Add prior
-    aux += -std::pow(pos,2)/theta-(kconst-1)*std::log(std::pow(pos,2));
+    aux += -std::pow(pos,2)/theta+(kconst-1)*std::log(std::pow(pos,2));
 
     return aux;
 }
