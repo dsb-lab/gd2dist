@@ -18,21 +18,9 @@ PYBIND11_MODULE(mcmcposteriorsampler, m) {
         py::arg("K"), py::arg("Kc"), py::arg("alpha"), py::arg("alphac"), py::arg("theta")=100, py::arg("kconst")=2,
         py::arg("initial_conditions") = std::vector<double>{}, py::arg("showProgress"), py::arg("seed"));
 
-    m.def("logLikelihood", &logLikelihood, "Function for the fit process of the mcmc model",
+    /*m.def("logLikelihood", &logLikelihood, "Function for the fit process of the mcmc model",
         py::arg("pi"), py::arg("mu"), py::arg("sigma"),
         py::arg("pic"), py::arg("muc"), py::arg("sigmac"),
-        py::arg("data"), py::arg("datac"));
+        py::arg("data"), py::arg("datac"));*/
 
-    /*m.def("fit", [](std::vector<double> & data, std::vector<double>& datac,
-                    int ignored_iterations, int iterations, int nChains,
-                    int K, int Kc, double alpha, double alphac, double sigmaWidth,
-                    std::vector<std::vector<double>> initial_conditions, bool showProgress){
-                py::scoped_ostream_redirect stream(
-                std::cout,
-                py::module::import("sys").attr("stdout"));
-                fit(data, datac, ignored_iterations, iterations, nChains, K, Kc, alpha, alphac, sigmaWidth, initial_conditions, showProgress);
-                return;}, "Function for the fit process of the mcmc model",
-            py::arg("data"), py::arg("datac"), py::arg("ignored_iterations"), py::arg("iterations"), py::arg("nChains"),
-            py::arg("K"), py::arg("Kc"), py::arg("alpha"), py::arg("alphac"), py::arg("sigmaWidth"),
-            py::arg("initial_conditions") = std::vector<double>{}, py::arg("showProgress") = true);*/
 }

@@ -13,7 +13,7 @@
 #include "mcmcsampler.h"
 #include "pybind11/pybind11.h"
 
-double logLikelihood(std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
+/*double logLikelihood(std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
                     std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
                     std::vector<double>  & data, std::vector<double>  & datac){
 
@@ -38,7 +38,7 @@ double logLikelihood(std::vector<double> & pi, std::vector<double> & mu, std::ve
     }
 
     return log;
-}
+}*/
 
 double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> sigma, double theta, double kconst){
 
