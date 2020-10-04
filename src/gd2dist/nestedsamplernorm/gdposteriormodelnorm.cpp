@@ -2,11 +2,11 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
-#include "gdposteriormodel.h"
+#include "gdposteriormodelnorm.h"
 
 #include "pybind11/pybind11.h"
 
-gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
+gdposteriormodelnorm::gdposteriormodelnorm(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
     dataNoise = datanoise;
     dataConvolution = dataconvolution;
     K = k;
@@ -22,7 +22,7 @@ gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<do
     }
 }
 
-double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
+double gdposteriormodelnorm::logLikelihood(std::vector<double>& parameters){
     double likelihood =  0;
     double max = -INFINITY;
     std::vector<double> exponent(K*Kc,0);
@@ -70,7 +70,7 @@ double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
     return likelihood;
 }
 
-std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
+std::vector<double> gdposteriormodelnorm::prior(std::vector<double>& uniform){
 
     std::vector<double> transformed(3*K+3*Kc,0);
 

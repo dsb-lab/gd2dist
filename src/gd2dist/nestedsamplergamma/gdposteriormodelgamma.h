@@ -3,7 +3,7 @@
 
 #include <vector>
 
-class gdposteriormodel{
+class gdposteriormodelgamma{
     public:
         std::vector<double> dataNoise;
         std::vector<double> dataConvolution;
@@ -11,7 +11,7 @@ class gdposteriormodel{
         int Kc;
         double dataMin;
         double dataMax;
-        gdposteriormodel(std::vector<double>,std::vector<double>,int, int);
+        gdposteriormodelgamma(std::vector<double>,std::vector<double>,int, int);
         double logLikelihood(std::vector<double>&);
         std::vector<double> prior(std::vector<double>&);
         std::vector<double> x;

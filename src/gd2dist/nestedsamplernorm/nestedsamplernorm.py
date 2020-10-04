@@ -1,5 +1,5 @@
 import dynesty as dn
-from .gdposteriormodel import gdposteriormodel
+from .gdposteriormodelnorm import gdposteriormodelnorm
 import numpy as np
 import inspect
 from scipy.stats import norm
@@ -7,7 +7,7 @@ import pickle as pk
 
 from ..shared_functions import *
 
-class nestedsampler(gdposteriormodel):
+class nestedsamplernorm(gdposteriormodelnorm):
     """
     Class for the nested sampler of the deconvolution gaussian model
     """

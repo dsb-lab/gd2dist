@@ -14,20 +14,35 @@ FetchContent_MakeAvailable(pybind11)
 # Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
 include(GNUInstallDirs)
 
-set(python_module_name1 gdposteriormodel)
-pybind11_add_module(${python_module_name1} MODULE 
-  src/gd2dist/nestedsampler/gdposteriormodel_wrapper.cpp
-  src/gd2dist/nestedsampler/gdposteriormodel.cpp
+set(python_module_name_norm gdposteriormodelnorm)
+pybind11_add_module(${python_module_name_norm} MODULE 
+  src/gd2dist/nestedsamplernorm/gdposteriormodelnorm_wrapper.cpp
+  src/gd2dist/nestedsamplernorm/gdposteriormodelnorm.cpp
 )
-install(TARGETS ${python_module_name1} DESTINATION ./nestedsampler)
+install(TARGETS ${python_module_name_norm} DESTINATION ./nestedsamplernorm)
 
-set(python_module_name2 mcmcposteriorsampler)
-pybind11_add_module(${python_module_name2} MODULE 
-  src/gd2dist/mcmcsampler/mcmcsampler_wrapper.cpp
-  src/gd2dist/mcmcsampler/mcmcsampler.cpp
+set(python_module_name_gamma gdposteriormodelgamma)
+pybind11_add_module(${python_module_name_gamma} MODULE 
+  src/gd2dist/nestedsamplergamma/gdposteriormodelgamma_wrapper.cpp
+  src/gd2dist/nestedsamplergamma/gdposteriormodelgamma.cpp
+)
+install(TARGETS ${python_module_name_gamma} DESTINATION ./nestedsamplergamma)
+
+set(python_module_name_nested_norm mcmcposteriorsamplernorm)
+pybind11_add_module(${python_module_name_nested_norm} MODULE 
+  src/gd2dist/mcmcsamplernorm/mcmcsamplernorm_wrapper.cpp
+  src/gd2dist/mcmcsamplernorm/mcmcsamplernorm.cpp
   src/gd2dist/shared_functions/probability_distributions.cpp
   )
-install(TARGETS ${python_module_name2} DESTINATION ./mcmcsampler)
+install(TARGETS ${python_module_name_nested_norm} DESTINATION ./mcmcsamplernorm)
+
+set(python_module_name_nested_gamma mcmcposteriorsamplergamma)
+pybind11_add_module(${python_module_name_nested_gamma} MODULE 
+  src/gd2dist/mcmcsamplergamma/mcmcsamplergamma_wrapper.cpp
+  src/gd2dist/mcmcsamplergamma/mcmcsamplergamma.cpp
+  src/gd2dist/shared_functions/probability_distributions.cpp
+  )
+install(TARGETS ${python_module_name_nested_gamma} DESTINATION ./mcmcsamplergamma)
 
 set(python_module_name3 shared_functions)
 pybind11_add_module(${python_module_name3} MODULE 

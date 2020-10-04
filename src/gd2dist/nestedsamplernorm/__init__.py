@@ -1,0 +1,1 @@
+from .nestedsamplergamma import nestedsamplergamma

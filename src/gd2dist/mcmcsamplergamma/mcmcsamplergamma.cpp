@@ -10,7 +10,7 @@
 #include <cmath>
 
 #include "../shared_functions/probability_distributions.h"
-#include "mcmcsampler.h"
+#include "mcmcsamplergamma.h"
 #include "pybind11/pybind11.h"
 
 /*double logLikelihood(std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,

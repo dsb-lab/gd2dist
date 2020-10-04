@@ -18,7 +18,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    packages=['gd2dist', 'gd2dist/nestedsampler', 'gd2dist/mcmcsampler', 'gd2dist/shared_functions'],
+    packages=['gd2dist', 'gd2dist/nestedsamplernorm', 'gd2dist/mcmcsamplernorm', 'gd2dist/nestedsamplergamma', 'gd2dist/mcmcsamplergamma', 'gd2dist/shared_functions'],
     package_dir={'': 'src'},
     cmake_install_dir='src/gd2dist',
     python_requires = ">=3.5",

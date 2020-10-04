@@ -5,12 +5,12 @@
 #include <pybind11/stl.h>   //For std:: containers (vectors, arrays...)
 #include <pybind11/numpy.h> //For vectorizing functions 
 //Load the fucntion headers
-#include "mcmcsampler.h"
+#include "mcmcsamplernorm.h"
 #include <vector>
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(mcmcposteriorsampler, m) {
+PYBIND11_MODULE(mcmcposteriorsamplernorm, m) {
     m.doc() = "Gaussian deconvolution library"; // optional module docstring
 
     m.def("fit", &fit, py::call_guard<py::gil_scoped_release>(), "Function for the fit process of the mcmc model",
