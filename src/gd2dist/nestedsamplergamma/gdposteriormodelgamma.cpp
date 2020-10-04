@@ -3,7 +3,9 @@
 #include <vector>
 #include <iostream>
 #include "gdposteriormodelgamma.h"
-
+#include "../shared_functions/probability_distributions.h"
+#include "include/boost/math/special_functions/gamma.hpp"
+#include "include/boost/math/special_functions/erf.hpp"
 #include "pybind11/pybind11.h"
 
 gdposteriormodelgamma::gdposteriormodelgamma(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
@@ -11,28 +13,21 @@ gdposteriormodelgamma::gdposteriormodelgamma(std::vector<double> datanoise, std:
     dataConvolution = dataconvolution;
     K = k;
     Kc = kc;
-    x.assign(10000,0);
-    normcdf.assign(10000,0);
-    for(int i = 0; i < 10000; i++){
-        x[i] = i*0.01;
-        normcdf[i] = 2*std::exp(-(std::pow(x[i],2)/2))*std::sqrt(1/M_PI/2)*0.01;
-    }
-    for(int i = 1; i < 10000; i++){
-        normcdf[i] += normcdf[i-1];
-    }
+
 }
 
-double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
+double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters, double precission = 5){
     double likelihood =  0;
     double max = -INFINITY;
     std::vector<double> exponent(K*Kc,0);
     double total = 0;
+    int L = parameters.size()-1;
 
     for(int i = 0; i < dataNoise.size(); i++){
         //Compute exponents and find the maximum
         max = -INFINITY;
         for(int j = 0; j < K; j++){
-            exponent[j] = -std::pow(dataNoise[i]-parameters[K+j],2)/(2*std::pow(parameters[2*K+j],2));
+            exponent[j] = gamma_pdf(dataNoise[i],parameters[K+j],parameters[2*K+j],parameters[L]);
             if (exponent[j] > max){
                 max = exponent[j];
             }
@@ -40,7 +35,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         //Compute the
         total = 0;
         for(int j = 0; j < K; j++){
-            total += parameters[j]*std::exp(exponent[j]-max)*std::sqrt(1/(2*M_PI*std::pow(parameters[2*K+j],2)));
+            total += parameters[j]*std::exp(exponent[j]-max);
         }
         likelihood += std::log(total)+max;
     }
@@ -50,7 +45,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         max = -INFINITY;
         for(int j = 0; j < K; j++){
             for(int k = 0; k < Kc; k++){
-                exponent[j*Kc+k] = -std::pow(dataConvolution[i]-parameters[K+j]-parameters[3*K+Kc+k],2)/(2*(std::pow(parameters[2*K+j],2)+std::pow(parameters[3*K+2*Kc+k],2)));
+                exponent[j*Kc+k] = -gamma_sum_pdf(dataConvolution[i],parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],parameters[L],precission);
                 if (exponent[j*Kc+k] > max){
                     max = exponent[j*Kc+k];
                 }
@@ -60,8 +55,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         total = 0;
         for(int j = 0; j < K; j++){
             for(int k = 0; k < Kc; k++){
-                total += parameters[j]*parameters[3*K+k]*std::exp(exponent[j*Kc+k]-max)
-                    *std::sqrt(1/(2*M_PI*(std::pow(parameters[2*K+j],2)+std::pow(parameters[3*K+2*Kc+k],2))));
+                total += parameters[j]*parameters[3*K+k]*std::exp(exponent[j*Kc+k]-max);
             }
         }
         likelihood += std::log(total)+max;
@@ -74,15 +68,10 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
 
     std::vector<double> transformed(3*K+3*Kc,0);
 
-    int pos = 0;
     double total = 0;
     //Uniform sphere
     for(int i = 0; i < K; i++){
-        pos = 0;
-        while(uniform[i] > normcdf[pos] && pos < 9998){
-            pos++;
-        }
-        transformed[i] = abs(x[pos]+x[pos-1])/2;
+        transformed[i] = boost::math::erf_inv(uniform[i]);
         total += transformed[i];
     }
     for(int i = 0; i < K; i++){
