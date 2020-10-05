@@ -44,7 +44,7 @@ double gamma_sum_pdf_batch(std::vector<double> &datac, double theta, double kcon
     return loglikelihood;
 }
 
-double gamma_pdf_both_batch(std::vector<double> &datac, double theta, double kconst, std::vector<double> thetac, std::vector<double> kconstc,
+double gamma_pdf_full_batch(std::vector<double> &datac, double theta, double kconst, std::vector<double> thetac, std::vector<double> kconstc,
                             double bias,
                             double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                             double precission,
@@ -101,14 +101,14 @@ void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x
 
             old = kconstold[i];
             for (int j = 0; j < 10; j++){
-                loss_old = gamma_pdf_both_batch(datac, theta[i], kconst[i], thetac, kconstc, bias,
+                loss_old = gamma_pdf_full_batch(datac, theta[i], kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 //Chose new height
                 loss_old += std::log(uniform(r));
                 //Expand
                 min = old-expansion;
-                loss_new = gamma_pdf_both_batch(datac, min, kconst[i], thetac, kconstc, bias,
+                loss_new = gamma_pdf_full_batch(datac, min, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 count = 0;
@@ -118,19 +118,19 @@ void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x
                         min = 0.01;
                         break;
                     }
-                    loss_new = gamma_pdf_both_batch(datac, min, kconst[i], thetac, kconstc, bias,
+                    loss_new = gamma_pdf_full_batch(datac, min, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     count++;
                 }
                 max = old+expansion;
-                loss_new = gamma_pdf_both_batch(datac, max, kconst[i], thetac, kconstc, bias,
+                loss_new = gamma_pdf_full_batch(datac, max, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 count = 0;
                 while(loss_new > loss_old && count < 200000){
                     max += expansion;
-                    loss_new = gamma_pdf_both_batch(datac, max, kconst[i], thetac, kconstc, bias,
+                    loss_new = gamma_pdf_full_batch(datac, max, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     count++;
@@ -140,7 +140,7 @@ void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x
                 count = 0;
                 do{
                     newkconst = (max-min)*uniform(r)+min;
-                    loss_new = gamma_pdf_both_batch(datac, newkconst, kconst[i], thetac, kconstc, bias,
+                    loss_new = gamma_pdf_full_batch(datac, newkconst, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     //Adapt boundaries
@@ -188,14 +188,14 @@ void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, st
 
             old = kconstold[i];
             for (int j = 0; j < 10; j++){
-                loss_old = gamma_pdf_both_batch(datac, theta[i], kconst[i], thetac, kconstc, bias,
+                loss_old = gamma_pdf_full_batch(datac, theta[i], kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 //Chose new height
                 loss_old += std::log(uniform(r));
                 //Expand
                 min = old-expansion;
-                loss_new = gamma_pdf_both_batch(datac, theta[i], min, thetac, kconstc, bias,
+                loss_new = gamma_pdf_full_batch(datac, theta[i], min, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 count = 0;
@@ -205,19 +205,19 @@ void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, st
                         min = 0.01;
                         break;
                     }
-                    loss_new = gamma_pdf_both_batch(datac, theta[i], min, thetac, kconstc, bias,
+                    loss_new = gamma_pdf_full_batch(datac, theta[i], min, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     count++;
                 }
                 max = old+expansion;
-                loss_new = gamma_pdf_both_batch(datac, theta[i], max, thetac, kconstc, bias,
+                loss_new = gamma_pdf_full_batch(datac, theta[i], max, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 count = 0;
                 while(loss_new > loss_old && count < 200000){
                     max += expansion;
-                    loss_new = gamma_pdf_both_batch(datac, theta[i], max, thetac, kconstc, bias,
+                    loss_new = gamma_pdf_full_batch(datac, theta[i], max, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     count++;
@@ -227,7 +227,7 @@ void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, st
                 count = 0;
                 do{
                     newkconst = (max-min)*uniform(r)+min;
-                    loss_new = gamma_pdf_both_batch(datac, theta[i], newkconst, thetac, kconstc, bias,
+                    loss_new = gamma_pdf_full_batch(datac, theta[i], newkconst, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     //Adapt boundaries
@@ -246,6 +246,202 @@ void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, st
             }
 
             kconstnew[i] = newkconst;
+        }
+
+    return;
+}
+
+void slice_thetac(std::mt19937 &r, 
+                            std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                            std::vector<double> &thetanewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                            double bias, double precission){
+
+        int N = thetac.size();
+        std::uniform_real_distribution<double> uniform(0,1);
+        double loss_old;
+        double loss_new;
+        double newkconst;
+        double acceptance;
+        double min;
+        double max;
+        double expansion = 0.5;
+        int count;
+        double old;
+
+        //Slice sampling
+        for (int i = 0; i < N; i++){
+
+            old = kconstold[i];
+            for (int j = 0; j < 10; j++){
+                loss_old = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                //Chose new height
+                loss_old += std::log(uniform(r));
+                //Expand
+                min = old-expansion;
+                loss_new = gamma_pdf_full_batch(datac, theta, kconst, min, kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                count = 0;
+                while(loss_new > loss_old && count < 200000){
+                    min -= expansion;
+                    if(min <= 0){
+                        min = 0.01;
+                        break;
+                    }
+                    loss_new = gamma_pdf_full_batch(datac, theta, kconst, min, kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                    count++;
+                }
+                max = old+expansion;
+                loss_new = gamma_pdf_full_batch(datac, theta, kconst, max, kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                count = 0;
+                while(loss_new > loss_old && count < 200000){
+                    max += expansion;
+                    loss_new = gamma_pdf_full_batch(datac, theta, kconst, max, kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                    count++;
+                }
+
+                //Sample
+                count = 0;
+                do{
+                    newkconst = (max-min)*uniform(r)+min;
+                    loss_new = gamma_pdf_full_batch(datac, theta, kconst, newkconst, kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                    //Adapt boundaries
+                    if(loss_new < loss_old){
+                        if(newkconst < old){
+                            min = newkconst;
+                        }
+                        else if(newkconst > old){
+                            max = newkconst;
+                        }
+                    }
+                    count++;
+                }while(loss_new < loss_old && count < 200000);
+
+                old = newkconst;
+            }
+
+            thetanewc[i] = newkconst;
+        }
+
+    return;
+}
+
+void slice_kc(std::mt19937 &r, 
+                            std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                            std::vector<double> &kconstnewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                            double bias, double precission){
+
+        int N = thetac.size();
+        std::uniform_real_distribution<double> uniform(0,1);
+        double loss_old;
+        double loss_new;
+        double newkconst;
+        double acceptance;
+        double min;
+        double max;
+        double expansion = 0.5;
+        int count;
+        double old;
+
+        //Slice sampling
+        for (int i = 0; i < N; i++){
+
+            old = kconstold[i];
+            for (int j = 0; j < 10; j++){
+                loss_old = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], kconstc[i],
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                //Chose new height
+                loss_old += std::log(uniform(r));
+                //Expand
+                min = old-expansion;
+                loss_new = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], min,
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                count = 0;
+                while(loss_new > loss_old && count < 200000){
+                    min -= expansion;
+                    if(min <= 0){
+                        min = 0.01;
+                        break;
+                    }
+                    loss_new = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], min,
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                    count++;
+                }
+                max = old+expansion;
+                loss_new = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], max,
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                count = 0;
+                while(loss_new > loss_old && count < 200000){
+                    max += expansion;
+                    loss_new = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], max,
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                    count++;
+                }
+
+                //Sample
+                count = 0;
+                do{
+                    newkconst = (max-min)*uniform(r)+min;
+                    loss_new = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], newkconst,
+                            bias,
+                            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                            precission,
+                            id, counter, i);
+                    //Adapt boundaries
+                    if(loss_new < loss_old){
+                        if(newkconst < old){
+                            min = newkconst;
+                        }
+                        else if(newkconst > old){
+                            max = newkconst;
+                        }
+                    }
+                    count++;
+                }while(loss_new < loss_old && count < 200000);
+
+                old = newkconst;
+            }
+
+            kconstnewc[i] = newkconst;
         }
 
     return;
