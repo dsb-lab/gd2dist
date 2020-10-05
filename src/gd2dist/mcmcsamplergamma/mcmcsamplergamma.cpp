@@ -142,7 +142,8 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
                     double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
                     double & bias, double & biasnew,
                     double priorbias_sigma, double priorbias_min,
-                    std::vector<std::vector<std::vector<double>>> id){
+                    std::vector<std::vector<std::vector<double>>> id,
+                    int precission){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -152,16 +153,14 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
     std::vector<double> probabilitiesc(size,0);   //Auxiliar vector for the weights of zc
     std::vector<int> choice(K,0);
     std::vector<int> choicec(size,0);
+    std::vector<std::vector<int>> counter(K,std::vector<int>(Kc,0));
 
-    std::vector<std::vector<double>> n(K,std::vector<double>(Kc+1,0));   //Counts of the different convolved gaussians
-    std::vector<std::vector<double>> x(K,std::vector<double>(Kc+1,0));   //Mean of the different convolved gaussians
-    std::vector<std::vector<double>> x2(K,std::vector<double>(Kc+1,0));   //Squared expression of the different convolved gaussians
-    std::vector<double> nminalpha(K,0);
+    std::vector<double> n(K,0);   //Counts of the different convolved gaussians
+    std::vector<double> x(K,0);   //Mean of the different convolved gaussians
+    std::vector<double> xlog(K,0);   //Squared expression of the different convolved gaussians
 
-    std::vector<std::vector<double>> nc(Kc,std::vector<double>(K,0));   //Counts of the different convolved gaussians
-    std::vector<std::vector<double>> xc(Kc,std::vector<double>(K,0));   //Mean of the different convolved gaussians
-    std::vector<std::vector<double>> x2c(Kc,std::vector<double>(K,0));   //Squared expression of the different convolved gaussians
     double thetaj = 0, phij = 0;
+    std::vector<double> nminalpha(K,0);
     std::vector<double> nminalphac(Kc,0);
     double effmean;
     double effkconst;
@@ -189,21 +188,21 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
         //Compute the basic statistics
         //We compute all the statistics already since we are going to use them only for the autofluorescence sampling
         for (unsigned int j = 0; j < K; j++){
-            n[j][Kc] += choice[j];
-            x[j][Kc] += choice[j]*data[i];
-            x2[j][Kc] += choice[j]*std::pow(data[i]-theta[j],2);
+            n[j] += choice[j];
+            x[j] += choice[j]*data[i]-bias;
+            xlog[j] += std::log(choice[j]-bias);
             nminalpha[j] += choice[j];
         }
     }
     
-    //Evaluate the convoluted data
+    //Evaluate the convolved data
     for (unsigned int i = 0; i < datac.size(); i++){
-        //Compute the weights for each gaussian
+        //Compute the weights for each gamma
         max = -INFINITY;
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
                 probabilitiesc[K*k+j] = std::log(pic[k])+std::log(pi[j])
-                                    +gaussian_pdf(datac[i],theta[j]+thetac[k],std::sqrt(std::pow(kconstc[k],2)+std::pow(kconst[j],2)));
+                                    +gamma_sum_pdf(datac[i],theta[j],kconst[j],thetac[k],kconstc[k],bias,precission);
                 if (probabilitiesc[K*k+j]>max){
                     max = probabilitiesc[K*k+j];
                 }
@@ -216,13 +215,16 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
                 probabilitiesc[K*k+j] = std::exp(probabilitiesc[K*k+j]);
             }
         }
-        //Assign a convoluted gaussian
-        thetaltinomial_1(r, probabilitiesc, choicec);
+        //Assign a convolved gamma
+        multinomial_1(r, probabilitiesc, choicec);
         //Save the identity
-        //We do not compute the statistics because they will have to be updated since this dataset is used for sampling twice
+        //We do not compute the statistics here because they will have to be updated since this dataset is used for sampling twice
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
-                id[k][j][i] = choicec[K*k+j];
+                //Add to list of identities to sum
+                id[j][k][counter[j][k]] = i;
+                counter[j][k]++;
+                //Add to list of contributions
                 nminalpha[j] += choicec[K*k+j];
                 nminalphac[k] += choicec[K*k+j];
             }
@@ -240,84 +242,17 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
     dirichlet(r, nminalpha, pinew);
     dirichlet(r, nminalphac, pinewc);
 
-    //Sample the autofluorescence variance and mean
-    //Compute the statistics
-    for (unsigned int i = 0; i < datac.size(); i++){
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
-                n[j][k] += id[k][j][i];
-                x[j][k] += id[k][j][i]*(datac[i]-thetac[k]);
-                x2[j][k] += id[k][j][i]*std::pow(datac[i]-theta[j]-thetac[k],2);
-            }
-        }
-    }
-    //Sample the variances
-    //sample_effective_gamma(r, n, x2, kconstc, kconst, kconstnew, kconstWidth);
-    slice_effective_gamma(r, n, x2, kconstc, kconst, kconstnew, theta, kconst);
-    //Sample the means
-    for (unsigned int j = 0; j < K; j++){
-        //Convoluted terms
-        for (unsigned int k = 0; k < Kc; k++){
-            effkconst += n[j][k]/(std::pow(kconstc[k],2)+std::pow(kconstnew[j],2));
-            effmean += x[j][k]/(std::pow(kconstc[k],2)+std::pow(kconstnew[j],2));
-        }
-        //Autofluorescence terms
-        effkconst += n[j][Kc]/(std::pow(kconstnew[j],2));
-        effmean += x[j][Kc]/(std::pow(kconstnew[j],2));
-        
-        if (effkconst == 0){
-            thetanew[j] = theta[j];
-        }else{
-            effmean = effmean/effkconst;
-            effkconst = 1/effkconst;
+    //Sample autofluorescence
+    //Sample the thetas
+    slice_theta(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, id, priortheta_k, priortheta_theta);
+    //Sample the kconst
+    slice_kconst(r, n, x, xlog, thetanew, kconst, thetac, kconstc, kconstnew, id, priork_k, priork_theta);
 
-            if(std::isnan(effkconst)==false){
-                std::normal_distribution<double> gaussian(effmean, effkconst);
-                thetanew[j] = gaussian(r);
-            }
-        }
-
-        //Clean variables
-        effmean = 0;
-        effkconst = 0;
-    }    
-
-    //Sample the convoluted variance and mean
-    //Compute the statistics
-    for (unsigned int i = 0; i < datac.size(); i++){
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
-                nc[k][j] += id[k][j][i];
-                xc[k][j] += id[k][j][i]*(datac[i]-thetanew[j]);
-                x2c[k][j] += id[k][j][i]*std::pow(datac[i]-thetanew[j]-thetac[k],2);
-            }
-        }
-    }
-    //Sample the variances
-    //sample_effective_gamma(r, nc, x2c, kconstnew, kconstc, kconstnewc, kconstWidth);
-    slice_effective_gamma(r, nc, x2c, kconstnew, kconstc, kconstnewc, theta, kconst);
-    //Sample the means
-    for (unsigned int k = 0; k < Kc; k++){
-        for (unsigned int j = 0; j < K; j++){
-            //I have to solve the problem of the sampling
-            effkconst += nc[k][j]/(std::pow(kconstnewc[k],2)+std::pow(kconstnew[j],2));
-            effmean += xc[k][j]/(std::pow(kconstnewc[k],2)+std::pow(kconstnew[j],2));
-        }
-        if (effkconst == 0){
-            thetanewc[k] = thetac[k];
-        }else{
-            effmean = effmean/effkconst;
-            effkconst = 1/effkconst;
-
-            if(std::isnan(effkconst)==false){
-                std::normal_distribution<double> gaussian(effmean, effkconst);
-                thetanewc[k] = gaussian(r);
-            }
-        }
-        //Clean variables
-        effmean = 0;
-        effkconst = 0;
-    }    
+    //Sample the convolution
+    //Sample the thetas
+    slice_thetac(r, n, thetanew, kconstnew, thetac, kconstc, thetanewc, id, priortheta_kc, priortheta_thetac);
+    //Sample the kconst
+    slice_kconstc(r, n, thetanew, kconstnew, thetanewc, kconstc, kconstnewc, id, priork_kc, priork_thetac);
 
     return;
 }
@@ -328,7 +263,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                                 double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
                                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                                 double priorbias_sigma, double priorbias_min, 
-                                bool initialised, bool showProgress, int seed){
+                                bool initialised, bool showProgress, int seed, int precission){
     //Variables for the random generation
     std::mt19937 r;
     r.seed(seed);
@@ -339,7 +274,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     double bias, biasnew;
 
-    std::vector<std::vector<std::vector<double>>> id(Kc,std::vector<std::vector<double>>(K,std::vector<double>(datac.size())));
+    std::vector<std::vector<std::vector<int>>> id(K,std::vector<std::vector<int>>(Kc,std::vector<int>(datac.size())));
 
     //Initialise
     //Initialized sampling from the prior
@@ -383,7 +318,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                          pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                          bias, biasnew,
                          priorbias_sigma, priorbias_min, 
-                         id);
+                         id, precission);
         pi = pinew;
         theta = thetanew;
         kconst = kconstnew;
@@ -415,7 +350,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                          pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
                          pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                          priorbias_sigma, priorbias_min,
-                         id);
+                         id, precission);
         pi = pinew;
         theta = thetanew;
         kconst = kconstnew;
@@ -460,6 +395,7 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
                           double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
                           double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                           double priorbias_sigma, double priorbias_min,
+                          int precission,
                           std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
 
     //Variable to check if initialised
@@ -505,7 +441,7 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
                                 priortheta_k, priortheta_theta, priork_k, priork_theta, 
                                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
                                 priorbias_sigma, priorbias_min,
-                                initialised, showProgress, seedchain)); //Need explicit by reference std::refs
+                                initialised, showProgress, seedchain, precission)); //Need explicit by reference std::refs
     }
     //Wait for rejoining
     for(int i = 0; i < nChains; i++){
