@@ -10,32 +10,97 @@
 #include <exception>
 #include <random>
 
-double logLikelihood(std::vector<double>, std::vector<double>, std::vector<double>,
-                                    std::vector<double>, std::vector<double>, std::vector<double>,
-                                    std::vector<double>, std::vector<double>);
-void sample_theta(std::mt19937 &, std::vector<std::vector<double>> &,
-                std::vector<std::vector<double>> &, 
-                std::vector<double> &, std::vector<double> &, std::vector<double> &,
-                double, double, double, double, double, double, double, double, double);
-Gibbs_convolved_step(std::mt19937 &, std::vector<double> &, std::vector<double> &,
-                    std::vector<double> &, std::vector<double> &, std::vector<double> &, 
-                    std::vector<double> &, std::vector<double> &, std::vector<double> &, 
-                    double, double, double, double, double,
-                    std::vector<double> &, std::vector<double> &, std::vector<double> &, 
-                    std::vector<double> &, std::vector<double> &, std::vector<double> &, 
-                    double, double, double, double, double,
-                    double &, double &,
-                    double, double,
-                    std::vector<std::vector<std::vector<double>>>, int);
-void chain(int, std::vector<std::vector<double>> &, std::vector<double> &, std::vector<double> &,                          
-                                int, int, int,
-                                int, int, double, double,
-                                double, double, double, double, double, double, double, double, double,
-                                bool, bool, int, int);
-std::vector<std::vector<double>> fit(std::vector<double> &, std::vector<double>&,
-                          int, int, int,
-                          int, int, double, double, 
-                          double, double, double, double, double, double, double, double, double, int,
-                          std::vector<std::vector<double>>, bool, int);
+double gamma_pdf_batch(double x, double logx, double n, double theta, double kconst,
+                            double priortheta_k, double priortheta_theta, double priork_k, double priork_theta);
+
+double gamma_sum_pdf_batch(std::vector<double> &datac, double theta, double kconst, double thetac, double kconstc,
+                            double bias,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                            double precission,
+                            std::vector<int> &id, int counter);
+
+double gamma_pdf_full_batch(std::vector<double> &datac, double theta, double kconst, std::vector<double> thetac, std::vector<double> kconstc,
+                            double bias,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                            double precission,
+                            std::vector<std::vector<int>> &id, std::vector<int> counter,
+                            double x, double logx, double n,
+                            double priortheta_k, double priortheta_theta, double priork_k, double priork_theta);
+
+double gamma_pdf_full_batch(std::vector<double> &datac, std::vector<double> theta, std::vector<double> kconst, double thetac, double kconstc,
+                            double bias,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                            double precission,
+                            std::vector<std::vector<std::vector<int>>> &id, std::vector<std::vector<int>> counter, int pos);
+
+double gamma_pdf_full_batch_slow(std::vector<double> &data, std::vector<double> &datac, std::vector<double> theta, std::vector<double> kconst, std::vector<double> thetac, std::vector<double> kconstc,
+                            double bias,
+                            double precission,
+                            std::vector<std::vector<int>> &id, std::vector<int> counter,
+                            std::vector<std::vector<int>> &idc, std::vector<int> counterc,
+                            double priorbias_sigma);
+
+void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
+                            std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                            std::vector<double> &thetanew, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                            double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                            double bias, double precission);
+
+void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
+                            std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                            std::vector<double> &kconstnew, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                            double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                            double bias, double precission);
+
+void slice_thetac(std::mt19937 &r, 
+                std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                std::vector<double> &thetanewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                double bias, double precission);
+
+void slice_kc(std::mt19937 &r, 
+                std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                std::vector<double> &kconstnewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                double bias, double precission);
+
+void slice_bias(std::mt19937 &r, 
+                std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                std::vector<double> &data, std::vector<double> &datac, 
+                std::vector<std::vector<int>> &id, std::vector<int> &counter,
+                std::vector<std::vector<std::vector<int>>> &idc, std::vector<std::vector<int>> &counterc,
+                double bias, double & biasnew, double priorbias_sigma, double precission);
+
+Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
+                    std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
+                    std::vector<double> & pinew, std::vector<double> & thetanew, std::vector<double> & kconstnew, 
+                    double alpha, double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
+                    std::vector<double> & pic, std::vector<double> & thetac, std::vector<double> & kconstc, 
+                    std::vector<double> & pinewc, std::vector<double> & thetanewc, std::vector<double> & kconstnewc, 
+                    double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                    double & bias, double & biasnew,
+                    double priorbias_sigma, double priorbias_min,
+                    std::vector<std::vector<int>> id, std::vector<std::vector<std::vector<int>>> idc,
+                    int precission);
+
+void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
+                                int ignored_iterations, int iterations, int nChains,
+                                int K, int Kc, double alpha, double alphac, 
+                                double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
+                                double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                                double priorbias_sigma, double priorbias_min, 
+                                bool initialised, bool showProgress, int seed, int precission);
+
+std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
+                          int ignored_iterations, int iterations, int nChains,
+                          int K, int Kc, 
+                          double alpha, double alphac, 
+                          double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
+                          double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                          double priorbias_sigma, double priorbias_min,
+                          int precission,
+                          std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed);
 
 #endif
