@@ -8,7 +8,7 @@ gamma_pdf(double x, double theta, double k, double bias){
 }
 
 double
-gamma_sum_pdf(double x, double theta1, double k1, double theta2, double k2, double bias, int precission = 1){
+gamma_sum_pdf(double x, double theta1, double k1, double theta2, double k2, double bias, int precission){
     double aux;
     //Exchange if necessary theta1 = min(theta_i)
     if(theta1 > theta2){

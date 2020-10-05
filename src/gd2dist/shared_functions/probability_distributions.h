@@ -5,6 +5,12 @@
 #include <random>
 
 double
+gamma_pdf(double, double, double, double);
+
+double
+gamma_sum_pdf(double, double, double, double, double, double, int);
+
+double
 gaussian_pdf(double, double, double);
 
 void

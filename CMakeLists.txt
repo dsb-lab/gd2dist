@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14...3.17)
 
 project(gd2dist VERSION "0.1")
 
+set(CMAKE_CXX_STANDARD 17)
+
 include(FetchContent)
 # Fetch pybind11
 FetchContent_Declare(
@@ -10,14 +12,16 @@ FetchContent_Declare(
   GIT_TAG v2.5.0
 )
 FetchContent_MakeAvailable(pybind11)
+
 # Fetch boost
 FetchContent_Declare(
   boostorg
   GIT_REPOSITORY https://github.com/boostorg/math
-  GIT_TAG v2.5.0
+  GIT_TAG        master
 )
 FetchContent_MakeAvailable(boostorg)
 include_directories(${boostorg_SOURCE_DIR})
+include_directories(${boostorg_SOURCE_DIR}/include)
 
 # Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
 include(GNUInstallDirs)

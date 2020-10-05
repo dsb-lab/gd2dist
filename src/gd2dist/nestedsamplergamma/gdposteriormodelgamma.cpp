@@ -6,6 +6,7 @@
 #include "../shared_functions/probability_distributions.h"
 #include "include/boost/math/special_functions/gamma.hpp"
 #include "include/boost/math/special_functions/erf.hpp"
+#include "include/boost/math/special_functions/detail/lgamma_small.hpp"
 #include "pybind11/pybind11.h"
 
 gdposteriormodelgamma::gdposteriormodelgamma(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
@@ -13,10 +14,9 @@ gdposteriormodelgamma::gdposteriormodelgamma(std::vector<double> datanoise, std:
     dataConvolution = dataconvolution;
     K = k;
     Kc = kc;
-
 }
 
-double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters, double precission = 5){
+double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
     double likelihood =  0;
     double max = -INFINITY;
     std::vector<double> exponent(K*Kc,0);
@@ -66,7 +66,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters, dou
 
 std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
 
-    std::vector<double> transformed(3*K+3*Kc,0);
+    std::vector<double> transformed(3*K+3*Kc+1,0);
 
     double total = 0;
     //Uniform sphere
@@ -79,21 +79,17 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < K; i++){
-        transformed[K+i] = (dataMax-dataMin)*uniform[K+i]+dataMin;
+        transformed[K+i] = priortheta_theta*boost::math::gamma_p_inv(priortheta_k,uniform[K+i]);
     }
     //Std
     for(int i = 0; i < K; i++){
-        transformed[2*K+i] = 3*(dataMax-dataMin)*uniform[2*K+i];
+        transformed[2*K+i] = priork_theta*boost::math::gamma_p_inv(priork_k,uniform[2*K+i]);
     }
 
     //Uniform sphere
     total = 0;
     for(int i = 0; i < Kc; i++){
-        pos = 0;
-        while(uniform[3*K+i] > normcdf[pos] && pos < 9998){
-            pos++;
-        }
-        transformed[3*K+i] = abs(x[pos]+x[pos-1])/2;
+        transformed[3*K+i] = boost::math::erf_inv(uniform[3*K+i]);;
         total += transformed[3*K+i];
     }
     for(int i = 0; i < Kc; i++){
@@ -101,12 +97,15 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+Kc+i] = (dataMax-dataMin)*uniform[3*K+Kc+i]+dataMin;
+        transformed[3*K+Kc+i] = priortheta_thetac*boost::math::gamma_p_inv(priortheta_kc,uniform[3*K+Kc+i]);
     }
     //Std
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+2*Kc+i] = 3*(dataMax-dataMin)*uniform[3*K+2*Kc+i];
+        transformed[3*K+2*Kc+i] = priork_thetac*boost::math::gamma_p_inv(priork_kc,uniform[3*K+2*Kc+i]);
     }
+
+    //Bias
+    transformed[3*K+3*Kc] = priorbias_sigma*boost::math::erf_inv(uniform[3*K+3*Kc]);
 
     return transformed;
 }

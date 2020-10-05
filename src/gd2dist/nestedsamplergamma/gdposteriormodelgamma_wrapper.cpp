@@ -22,7 +22,15 @@ PYBIND11_MODULE(gdposteriormodelgamma, m) {
         .def_readwrite("Kc", &gdposteriormodelgamma::Kc)
         .def_readwrite("data", &gdposteriormodelgamma::dataNoise)
         .def_readwrite("datac", &gdposteriormodelgamma::dataConvolution)
-        .def_readwrite("dataMin", &gdposteriormodelgamma::dataMin)
-        .def_readwrite("dataMax", &gdposteriormodelgamma::dataMax)
+        .def_readwrite("priorbias_sigma", &gdposteriormodelgamma::priorbias_sigma)
+        .def_readwrite("priortheta_theta", &gdposteriormodelgamma::priortheta_theta)
+        .def_readwrite("priortheta_k", &gdposteriormodelgamma::priortheta_k)
+        .def_readwrite("priork_theta", &gdposteriormodelgamma::priork_theta)
+        .def_readwrite("priork_k", &gdposteriormodelgamma::priork_k)
+        .def_readwrite("priortheta_thetac", &gdposteriormodelgamma::priortheta_thetac)
+        .def_readwrite("priortheta_kc", &gdposteriormodelgamma::priortheta_kc)
+        .def_readwrite("priork_thetac", &gdposteriormodelgamma::priork_thetac)
+        .def_readwrite("priork_kc", &gdposteriormodelgamma::priork_kc)
+        .def_readwrite("precission", &gdposteriormodelgamma::precission)
         ;
 }
