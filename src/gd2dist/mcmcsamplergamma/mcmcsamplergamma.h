@@ -73,7 +73,7 @@ void slice_bias(std::mt19937 &r,
                 std::vector<std::vector<std::vector<int>>> &idc, std::vector<std::vector<int>> &counterc,
                 double bias, double & biasnew, double priorbias_sigma, double precission);
 
-Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
+void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
                     std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
                     std::vector<double> & pinew, std::vector<double> & thetanew, std::vector<double> & kconstnew, 
                     double alpha, double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
