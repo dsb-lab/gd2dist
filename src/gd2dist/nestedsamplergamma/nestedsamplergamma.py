@@ -172,13 +172,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size))
+            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size))
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
             else:
-                return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
 
         return
 
@@ -197,13 +197,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size))
+            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size))
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
             else:
-                return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
 
         return
 
@@ -222,13 +222,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size))
+            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size))
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
             else:
-                return  np.array(sample_convolution(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
 
         return
 
