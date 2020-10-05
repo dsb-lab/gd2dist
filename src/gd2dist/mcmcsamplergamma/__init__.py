@@ -1,1 +1,1 @@
-from .mcmcsamplernorm import mcmcsamplernorm
+from .mcmcsamplergamma import mcmcsamplergamma

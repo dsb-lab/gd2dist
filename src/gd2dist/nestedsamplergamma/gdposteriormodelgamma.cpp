@@ -26,8 +26,10 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
     for(int i = 0; i < dataNoise.size(); i++){
         //Compute exponents and find the maximum
         max = -INFINITY;
+//        pybind11::print(dataNoise.size());
         for(int j = 0; j < K; j++){
             exponent[j] = gamma_pdf(dataNoise[i],parameters[K+j],parameters[2*K+j],parameters[L]);
+            
             if (exponent[j] > max){
                 max = exponent[j];
             }
@@ -45,7 +47,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         max = -INFINITY;
         for(int j = 0; j < K; j++){
             for(int k = 0; k < Kc; k++){
-                exponent[j*Kc+k] = -gamma_sum_pdf(dataConvolution[i],parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],parameters[L],precission);
+                exponent[j*Kc+k] = gamma_sum_pdf(dataConvolution[i],parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],parameters[L],precission);
                 if (exponent[j*Kc+k] > max){
                     max = exponent[j*Kc+k];
                 }
@@ -59,6 +61,10 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
             }
         }
         likelihood += std::log(total)+max;
+    }
+
+    if(std::isnan(likelihood)){
+        likelihood = -INFINITY;
     }
 
     return likelihood;
@@ -105,7 +111,7 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
     }
 
     //Bias
-    transformed[3*K+3*Kc] = priorbias_sigma*boost::math::erf_inv(uniform[3*K+3*Kc]);
+    transformed[3*K+3*Kc] = std::pow(2,1.0/2)*priorbias_sigma*boost::math::erf_inv(uniform[3*K+3*Kc]);
 
     return transformed;
 }

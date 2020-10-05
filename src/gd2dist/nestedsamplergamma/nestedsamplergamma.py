@@ -25,7 +25,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
         --------------
             nothing
         """
-        gdposteriormodel.__init__(self,[],[],K,Kc)
+        gdposteriormodelgamma.__init__(self,[],[],K,Kc)
         self.fitted = False
 
         return
@@ -49,8 +49,6 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
         self.data = dataNoise
         self.datac = dataConvolution
-        self.dataMin = np.min([dataNoise,dataConvolution])
-        self.dataMax = np.max([dataNoise,dataConvolution])
 
         #separate kargs for the two different samplers functions
         #nested sampler function
@@ -63,8 +61,8 @@ class nestedsamplergamma(gdposteriormodelgamma):
         run_nested_args = [k for k, v in inspect.signature(dn.NestedSampler).parameters.items()]
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
-        gdposteriormodel.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
-        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+        gdposteriormodelgamma.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
+        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc+1, **nestedsampler_dict)
         dynestyModel.run_nested(**run_nested_dict)
         self.results = {}
         self.results["samples"] = dynestyModel.results["samples"]

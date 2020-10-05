@@ -37,6 +37,7 @@ set(python_module_name_gamma gdposteriormodelgamma)
 pybind11_add_module(${python_module_name_gamma} MODULE 
   src/gd2dist/nestedsamplergamma/gdposteriormodelgamma_wrapper.cpp
   src/gd2dist/nestedsamplergamma/gdposteriormodelgamma.cpp
+  src/gd2dist/shared_functions/probability_distributions.cpp
 )
 install(TARGETS ${python_module_name_gamma} DESTINATION ./nestedsamplergamma)
 
