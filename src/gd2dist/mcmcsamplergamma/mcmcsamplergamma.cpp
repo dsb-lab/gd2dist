@@ -77,6 +77,37 @@ double gamma_pdf_full_batch(std::vector<double> &datac, std::vector<double> thet
     return loglikelihood;
 }
 
+double gamma_pdf_full_batch_slow(std::vector<double> &data, std::vector<double> &datac, std::vector<double> theta, std::vector<double> kconst, std::vector<double> thetac, std::vector<double> kconstc,
+                            double bias,
+                            double precission,
+                            std::vector<std::vector<int>> &id, std::vector<int> counter,
+                            std::vector<std::vector<int>> &idc, std::vector<int> counterc,
+                            double priorbias_sigma){
+    
+    double loglikelihood = 0;
+    int loc;
+    //Autofluorescence
+    for(int i =  0; i < theta.size(); i++){
+        for(int j = 0; j < counter[i]; j++){
+            loc = id[i][j];
+            loglikelihood += gamma_pdf(data[loc],theta[i],kconst[i],bias);
+        }
+    }
+    //Convolution
+    for(int i =  0; i < theta.size(); i++){
+        for(int j = 0; j < thetac.size(); j++){
+            for(int k = 0; k < counterc[i][j]; k++){
+                loc = id[i][j][k];
+                loglikelihood += gamma_sum_pdf(datac[loc],theta[i],kconst[i],theta[j],kconst[j],bias,precission);
+            }
+        }
+    }
+    //Prior
+    loglikelihood += -std::pow(bias,2)/(2*std::pow(priorbias_sigma,2))
+
+    return loglikelihood;
+}
+
 void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
                             std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                             std::vector<double> &thetanew, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
@@ -252,10 +283,10 @@ void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, st
 }
 
 void slice_thetac(std::mt19937 &r, 
-                            std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
-                            std::vector<double> &thetanewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
-                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission){
+                std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                std::vector<double> &thetanewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                double bias, double precission){
 
         int N = thetac.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -350,10 +381,10 @@ void slice_thetac(std::mt19937 &r,
 }
 
 void slice_kc(std::mt19937 &r, 
-                            std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
-                            std::vector<double> &kconstnewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
-                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission){
+                std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                std::vector<double> &kconstnewc, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
+                double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                double bias, double precission){
 
         int N = thetac.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -447,6 +478,105 @@ void slice_kc(std::mt19937 &r,
     return;
 }
 
+void slice_bias(std::mt19937 &r, 
+                std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
+                std::vector<double> &data, std::vector<double> &datac, 
+                std::vector<std::vector<int>> &id, std::vector<int> &counter,
+                std::vector<std::vector<std::vector<int>>> &idc, std::vector<std::vector<int>> &counterc,
+                double bias, double & biasnew, double priorbias_sigma, double precission){
+
+        int N = theta.size();
+        std::uniform_real_distribution<double> uniform(0,1);
+        double loss_old;
+        double loss_new;
+        double newkconst;
+        double acceptance;
+        double min;
+        double max;
+        double expansion = 0.5;
+        int count;
+        double old;
+
+        //Slice sampling
+        for (int i = 0; i < N; i++){
+
+            old = kconstold[i];
+            for (int j = 0; j < 10; j++){
+                loss_old = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
+                            bias, precission,
+                            id, counter,
+                            idc, counterc,
+                            priorbias_sigma);
+                //Chose new height
+                loss_old += std::log(uniform(r));
+                //Expand
+                min = old-expansion;
+                loss_new = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
+                            min, precission,
+                            id, counter,
+                            idc, counterc,
+                            priorbias_sigma);
+                count = 0;
+                while(loss_new > loss_old && count < 200000){
+                    min -= expansion;
+                    if(min <= 0){
+                        min = 0.01;
+                        break;
+                    }
+                    loss_new = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
+                            min, precission,
+                            id, counter,
+                            idc, counterc,
+                            priorbias_sigma);
+                    count++;
+                }
+                max = old+expansion;
+                loss_new = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
+                            max, precission,
+                            id, counter,
+                            idc, counterc,
+                            priorbias_sigma);
+                count = 0;
+                while(loss_new > loss_old && count < 200000){
+                    max += expansion;
+                    loss_new = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
+                            max, precission,
+                            id, counter,
+                            idc, counterc,
+                            priorbias_sigma);
+                    count++;
+                }
+
+                //Sample
+                count = 0;
+                do{
+                    newkconst = (max-min)*uniform(r)+min;
+                    loss_new = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
+                            newkconst, precission,
+                            id, counter,
+                            idc, counterc,
+                            priorbias_sigma);
+                    //Adapt boundaries
+                    if(loss_new < loss_old){
+                        if(newkconst < old){
+                            min = newkconst;
+                        }
+                        else if(newkconst > old){
+                            max = newkconst;
+                        }
+                    }
+                    count++;
+                }while(loss_new < loss_old && count < 200000);
+
+                old = newkconst;
+            }
+
+            biasnew = newkconst;
+        }
+
+    return;
+}
+
 Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
                     std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
                     std::vector<double> & pinew, std::vector<double> & thetanew, std::vector<double> & kconstnew, 
@@ -456,7 +586,7 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
                     double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
                     double & bias, double & biasnew,
                     double priorbias_sigma, double priorbias_min,
-                    std::vector<std::vector<std::vector<double>>> id,
+                    std::vector<std::vector<int>> id, std::vector<std::vector<std::vector<int>>> idc,
                     int precission){
 
     //Step of the convolution
@@ -467,7 +597,8 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
     std::vector<double> probabilitiesc(size,0);   //Auxiliar vector for the weights of zc
     std::vector<int> choice(K,0);
     std::vector<int> choicec(size,0);
-    std::vector<std::vector<int>> counter(K,std::vector<int>(Kc,0));
+    std::vector<int> counter(K,0);
+    std::vector<std::vector<int>> counterc(K,std::vector<int>(Kc,0));
 
     std::vector<double> n(K,0);   //Counts of the different convolved gaussians
     std::vector<double> x(K,0);   //Mean of the different convolved gaussians
@@ -506,6 +637,10 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
             x[j] += choice[j]*data[i]-bias;
             xlog[j] += std::log(choice[j]-bias);
             nminalpha[j] += choice[j];
+            if(choice[j] == 1){
+                id[j][counter[j]] = i;
+                counter[j]++;
+            }
         }
     }
     
@@ -535,9 +670,11 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
         //We do not compute the statistics here because they will have to be updated since this dataset is used for sampling twice
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
-                //Add to list of identities to sum
-                id[j][k][counter[j][k]] = i;
-                counter[j][k]++;
+                if(choicec[K*k+j] == 1){
+                    //Add to list of identities to sum
+                    idc[j][k][counterc[j][k]] = i;
+                    counterc[j][k]++;
+                }
                 //Add to list of contributions
                 nminalpha[j] += choicec[K*k+j];
                 nminalphac[k] += choicec[K*k+j];
@@ -558,18 +695,24 @@ Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<d
 
     //Sample autofluorescence
     //Sample the thetas
-    slice_theta(r, n, x, xlog, theta, kconst, thetac, kconstc, bias, precission, thetanew, id, counter, priortheta_k, priortheta_theta, priork_k, priork_theta);
+    slice_theta(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, datac, id, counter,
+                priortheta_k, priortheta_theta, priork_k, priork_theta,
+                priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
+                bias, precission);
     //Sample the kconst
-    slice_kconst(r, n, x, xlog, thetanew, kconst, thetac, kconstc, bias, precission, kconstnew, id, counter, priortheta_k, priortheta_theta, priork_k, priork_theta);
+    slice_k(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, datac, id, counter,
+                priortheta_k, priortheta_theta, priork_k, priork_theta,
+                priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
+                bias, precission);
 
     //Sample the convolution
     //Sample the thetas
-    slice_thetac(r, n, thetanew, kconstnew, thetac, kconstc, bias, precission, thetanewc, id, counter, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac);
+    slice_thetac(r, theta, kconst, thetac, kconstc, thetanewc, datac, id, counter, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
     //Sample the kconst
-    slice_kconstc(r, n, thetanew, kconstnew, thetanewc, kconstc, bias, precission, kconstnewc, id, counter, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac);
+    slice_kc(r, theta, kconst, thetac, kconstc, kconstnewc, datac, id, counter, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
 
     //Sample the bias
-    slice_bias();
+    slice_bias(r,theta, kconst, thetac, kconstc, data, datac, id, counter, idc, counterc, bias, biasnew, priorbias_sigma, precission);
 
     return;
 }
@@ -591,7 +734,8 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     double bias, biasnew;
 
-    std::vector<std::vector<std::vector<int>>> id(K,std::vector<std::vector<int>>(Kc,std::vector<int>(datac.size())));
+    std::vector<std::vector<std::vector<int>>> idc(K,std::vector<std::vector<int>>(Kc,std::vector<int>(datac.size(),0)));
+    std::vector<std::vector<int>> id(K,std::vector<int>(datac.size(),0));
 
     //Initialise
     //Initialized sampling from the prior
@@ -635,7 +779,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                          pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                          bias, biasnew,
                          priorbias_sigma, priorbias_min, 
-                         id, precission);
+                         id, idc, precission);
         pi = pinew;
         theta = thetanew;
         kconst = kconstnew;
@@ -667,7 +811,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                          pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
                          pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                          priorbias_sigma, priorbias_min,
-                         id, precission);
+                         id, idc, precission);
         pi = pinew;
         theta = thetanew;
         kconst = kconstnew;
