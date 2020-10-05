@@ -62,6 +62,21 @@ double gamma_pdf_both_batch(std::vector<double> &datac, double theta, double kco
     return loglikelihood;
 }
 
+double gamma_pdf_full_batch(std::vector<double> &datac, std::vector<double> theta, std::vector<double> kconst, double thetac, double kconstc,
+                            double bias,
+                            double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                            double precission,
+                            std::vector<std::vector<std::vector<int>>> &id, std::vector<std::vector<int>> counter, int pos){
+
+    double loglikelihood = 0;
+
+    //Add fluorescence
+    for(int i = 0; i < theta.size(); i++){
+        loglikelihood += gamma_sum_pdf_batch(datac, theta[i], kconst[i], thetac[i], kconstc, bias, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, id[i][pos], counter[i][pos]);
+    }
+    return loglikelihood;
+}
+
 void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
                             std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                             std::vector<double> &thetanew, std::vector<double> &datac, std::vector<std::vector<std::vector<double>>> &id, std::vector<double> &counter,
