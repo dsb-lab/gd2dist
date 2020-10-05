@@ -37,7 +37,7 @@ double gamma_pdf_full_batch_slow(std::vector<double> &data, std::vector<double> 
                             double bias,
                             double precission,
                             std::vector<std::vector<int>> &id, std::vector<int> counter,
-                            std::vector<std::vector<int>> &idc, std::vector<int> counterc,
+                            std::vector<std::vector<std::vector<int>>> &idc, std::vector<std::vector<int>> counterc,
                             double priorbias_sigma);
 
 void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 

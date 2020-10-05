@@ -72,7 +72,7 @@ double gamma_pdf_full_batch(std::vector<double> &datac, std::vector<double> thet
 
     //Add fluorescence
     for(int i = 0; i < theta.size(); i++){
-        loglikelihood += gamma_sum_pdf_batch(datac, theta[i], kconst[i], thetac[i], kconstc, bias, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, id[i][pos], counter[i][pos]);
+        loglikelihood += gamma_sum_pdf_batch(datac, theta[i], kconst[i], thetac, kconstc, bias, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, id[i][pos], counter[i][pos]);
     }
     return loglikelihood;
 }
@@ -81,7 +81,7 @@ double gamma_pdf_full_batch_slow(std::vector<double> &data, std::vector<double> 
                             double bias,
                             double precission,
                             std::vector<std::vector<int>> &id, std::vector<int> counter,
-                            std::vector<std::vector<int>> &idc, std::vector<int> counterc,
+                            std::vector<std::vector<std::vector<int>>> &idc, std::vector<std::vector<int>> counterc,
                             double priorbias_sigma){
     
     double loglikelihood = 0;
@@ -97,13 +97,13 @@ double gamma_pdf_full_batch_slow(std::vector<double> &data, std::vector<double> 
     for(int i =  0; i < theta.size(); i++){
         for(int j = 0; j < thetac.size(); j++){
             for(int k = 0; k < counterc[i][j]; k++){
-                loc = id[i][j][k];
+                loc = idc[i][j][k];
                 loglikelihood += gamma_sum_pdf(datac[loc],theta[i],kconst[i],theta[j],kconst[j],bias,precission);
             }
         }
     }
     //Prior
-    loglikelihood += -std::pow(bias,2)/(2*std::pow(priorbias_sigma,2))
+    loglikelihood += -std::pow(bias,2)/(2*std::pow(priorbias_sigma,2));
 
     return loglikelihood;
 }
@@ -130,9 +130,9 @@ void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = kconstold[i];
+            old = theta[i];
             for (int j = 0; j < 10; j++){
-                loss_old = gamma_pdf_full_batch(datac, theta[i], kconst[i], thetac, kconstc, bias,
+                loss_old = gamma_pdf_full_batch(datac, old, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 //Chose new height
@@ -217,9 +217,9 @@ void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, st
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = kconstold[i];
+            old = kconst[i];
             for (int j = 0; j < 10; j++){
-                loss_old = gamma_pdf_full_batch(datac, theta[i], kconst[i], thetac, kconstc, bias,
+                loss_old = gamma_pdf_full_batch(datac, theta[i], old, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission,
                             id[i], counter[i], x[i], xlog[i], n[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                 //Chose new height
@@ -303,9 +303,9 @@ void slice_thetac(std::mt19937 &r,
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = kconstold[i];
+            old = thetac[i];
             for (int j = 0; j < 10; j++){
-                loss_old = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], kconstc[i],
+                loss_old = gamma_pdf_full_batch(datac, theta, kconst, old, kconstc[i],
                             bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
                             precission,
@@ -401,9 +401,9 @@ void slice_kc(std::mt19937 &r,
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = kconstold[i];
+            old = kconstc[i];
             for (int j = 0; j < 10; j++){
-                loss_old = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], kconstc[i],
+                loss_old = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], old,
                             bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
                             precission,
@@ -500,10 +500,10 @@ void slice_bias(std::mt19937 &r,
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = kconstold[i];
+            old = bias;
             for (int j = 0; j < 10; j++){
                 loss_old = gamma_pdf_full_batch_slow(data, datac, theta, kconst, thetac, kconstc,
-                            bias, precission,
+                            old, precission,
                             id, counter,
                             idc, counterc,
                             priorbias_sigma);
