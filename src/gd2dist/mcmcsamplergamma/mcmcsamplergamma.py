@@ -34,7 +34,9 @@ class mcmcsamplergamma:
 
         return
 
-    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, theta = None, kconst = 1, initial_conditions = [], show_progress = True, seed = 0):
+    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, 
+            priortheta_k, priortheta_theta, priork_k, priork_theta, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, priorbias_sigma,
+            initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
 
@@ -62,14 +64,31 @@ class mcmcsamplergamma:
         self.iterations = iterations
         self.ignored_iterations = ignored_iterations
         self.chains = chains
-        self.theta = theta
-        self.kconst = kconst 
-        
+
+        self.priortheta_k
+        self.priortheta_theta
+        self.priork_k
+        self.priork_theta
+
+        self.priortheta_kc
+        self.priortheta_thetac
+        self.priork_kc
+        self.priork_thetac
+
+        self.priorbias_sigma
+
         #Assign an approximate theta to make the prior vague
         if theta == None:
             self.theta = np.std(dataConvolution)
 
-        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.alpha, self.alphac, self.theta, self.kconst, initial_conditions, show_progress, seed))
+        self.samples = np.array(fit(dataNoise, dataConvolution, 
+                                ignored_iterations, iterations, chains, 
+                                self.K, self.Kc, 
+                                self.alpha, self.alphac, 
+                                self.priortheta_k, self.priortheta_theta, self.priork_k, self.priork_theta,
+                                self.priortheta_kc, self.priortheta_thetac, self.priork_kc, self.priork_thetac,
+                                self.priorbias_sigma,
+                                initial_conditions, show_progress, seed))
         
         self.fitted = True
 

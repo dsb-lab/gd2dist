@@ -13,8 +13,8 @@
 #include "mcmcsamplergamma.h"
 #include "pybind11/pybind11.h"
 
-/*double logLikelihood(std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
-                    std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
+/*double logLikelihood(std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst,
+                    std::vector<double> & pic, std::vector<double> & thetac, std::vector<double> & kconstc,
                     std::vector<double>  & data, std::vector<double>  & datac){
 
     double log = 0;
@@ -24,7 +24,7 @@
     for (int i = 0; i < data.size(); i++){
         for (unsigned int j = 0; j < pi.size(); j++){
             log += std::log(pi[j])
-                +gaussian_pdf(data[i],mu[j],sigma[j]);
+                +gaussian_pdf(data[i],theta[j],kconst[j]);
         }
     }
 
@@ -32,7 +32,7 @@
         for (unsigned int j = 0; j < pi.size(); j++){
             for (unsigned int k = 0; k < pic.size(); k++){
                 log += std::log(pic[k])+std::log(pi[j])
-                                    +gaussian_pdf(datac[i],mu[j]+muc[k],std::sqrt(std::pow(sigmac[k],2)+std::pow(sigma[j],2)));
+                                    +gaussian_pdf(datac[i],theta[j]+thetac[k],std::sqrt(std::pow(kconstc[k],2)+std::pow(kconst[j],2)));
             }
         }
     }
@@ -40,15 +40,15 @@
     return log;
 }*/
 
-double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> sigma, double theta, double kconst){
+double effective_gamma_not_normalized(double pos, std::vector<double> n, std::vector<double> x2, std::vector<double> kconst, double theta, double kconst){
 
     double aux = 0;
-    int l = sigma.size();
+    int l = kconst.size();
     int l2 = x2.size();
 
     for (int i = 0; i < l; i++){
-        aux += -n[i]*std::log(std::pow(pos,2)+std::pow(sigma[i],2))/2
-                -x2[i]/(2*(std::pow(pos,2)+std::pow(sigma[i],2))); 
+        aux += -n[i]*std::log(std::pow(pos,2)+std::pow(kconst[i],2))/2
+                -x2[i]/(2*(std::pow(pos,2)+std::pow(kconst[i],2))); 
     }
     if (l == l2-1){
         aux += -n[l]*std::log(std::pow(pos,2))/2
@@ -62,14 +62,14 @@ double effective_gamma_not_normalized(double pos, std::vector<double> n, std::ve
 
 void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
                              std::vector<std::vector<double>> &x2, 
-                             std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew,
+                             std::vector<double> &kconst, std::vector<double> &kconstold, std::vector<double> &kconstnew,
                              double theta, double kconst){
 
-        int N = sigmanew.size();
+        int N = kconstnew.size();
         std::uniform_real_distribution<double> uniform(0,1);
         double loss_old;
         double loss_new;
-        double newsigma;
+        double newkconst;
         double acceptance;
         double min;
         double max;
@@ -80,14 +80,14 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = sigmaold[i];
+            old = kconstold[i];
             for (int j = 0; j < 10; j++){
-                loss_old = effective_gamma_not_normalized(old, n[i], x2[i], sigma, theta, kconst);
+                loss_old = effective_gamma_not_normalized(old, n[i], x2[i], kconst, theta, kconst);
                 //Chose new height
                 loss_old += std::log(uniform(r));
                 //Expand
                 min = old-expansion;
-                loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
+                loss_new = effective_gamma_not_normalized(min, n[i], x2[i], kconst, theta, kconst);
                 counter = 0;
                 while(loss_new > loss_old && counter < 200000){
                     min -= expansion;
@@ -95,53 +95,54 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
                         min = 0.01;
                         break;
                     }
-                    loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
+                    loss_new = effective_gamma_not_normalized(min, n[i], x2[i], kconst, theta, kconst);
                     counter++;
                 }
                 max = old+expansion;
-                loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
+                loss_new = effective_gamma_not_normalized(max, n[i], x2[i], kconst, theta, kconst);
                 counter = 0;
                 while(loss_new > loss_old && counter < 200000){
                     max += expansion;
-                    loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
+                    loss_new = effective_gamma_not_normalized(max, n[i], x2[i], kconst, theta, kconst);
                     counter++;
                 }
 
                 //Sample
                 counter = 0;
                 do{
-                    newsigma = (max-min)*uniform(r)+min;
-                    loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma, theta, kconst);
+                    newkconst = (max-min)*uniform(r)+min;
+                    loss_new = effective_gamma_not_normalized(newkconst, n[i], x2[i], kconst, theta, kconst);
                     //Adapt boundaries
                     if(loss_new < loss_old){
-                        if(newsigma < old){
-                            min = newsigma;
+                        if(newkconst < old){
+                            min = newkconst;
                         }
-                        else if(newsigma > old){
-                            max = newsigma;
+                        else if(newkconst > old){
+                            max = newkconst;
                         }
                     }
                     counter++;
                 }while(loss_new < loss_old && counter < 200000);
 
-                old = newsigma;
+                old = newkconst;
             }
 
-            sigmanew[i] = newsigma;
+            kconstnew[i] = newkconst;
         }
 
     return;
 }
 
-void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double>& datac,
-                          std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
-                          std::vector<double> & pinew, std::vector<double> & munew, std::vector<double> & sigmanew, 
-                          double alpha,
-                          std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
-                          std::vector<double> & pinewc, std::vector<double> & munewc, std::vector<double> & sigmanewc,
-                          double alphac,
-                          std::vector<std::vector<std::vector<double>>> id,
-                          double theta, double kconst){
+Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
+                    std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
+                    std::vector<double> & pinew, std::vector<double> & thetanew, std::vector<double> & kconstnew, 
+                    double alpha, double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
+                    std::vector<double> & pic, std::vector<double> & thetac, std::vector<double> & kconstc, 
+                    std::vector<double> & pinewc, std::vector<double> & thetanewc, std::vector<double> & kconstnewc, 
+                    double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
+                    double & bias, double & biasnew,
+                    double priorbias_sigma, double priorbias_min,
+                    std::vector<std::vector<std::vector<double>>> id){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -160,10 +161,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     std::vector<std::vector<double>> nc(Kc,std::vector<double>(K,0));   //Counts of the different convolved gaussians
     std::vector<std::vector<double>> xc(Kc,std::vector<double>(K,0));   //Mean of the different convolved gaussians
     std::vector<std::vector<double>> x2c(Kc,std::vector<double>(K,0));   //Squared expression of the different convolved gaussians
-    double muj = 0, phij = 0;
+    double thetaj = 0, phij = 0;
     std::vector<double> nminalphac(Kc,0);
     double effmean;
-    double effsigma;
+    double effkconst;
 
     double max;
 
@@ -173,7 +174,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         max = -INFINITY;
         for (unsigned int j = 0; j < K; j++){
             probabilities[j] = std::log(pi[j])
-                                +gaussian_pdf(data[i],mu[j],sigma[j]);
+                                +gamma_pdf(data[i],theta[j],kconst[j], bias);
             if (probabilities[j] > max){
                 max = probabilities[j];
             }
@@ -190,7 +191,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         for (unsigned int j = 0; j < K; j++){
             n[j][Kc] += choice[j];
             x[j][Kc] += choice[j]*data[i];
-            x2[j][Kc] += choice[j]*std::pow(data[i]-mu[j],2);
+            x2[j][Kc] += choice[j]*std::pow(data[i]-theta[j],2);
             nminalpha[j] += choice[j];
         }
     }
@@ -202,7 +203,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
                 probabilitiesc[K*k+j] = std::log(pic[k])+std::log(pi[j])
-                                    +gaussian_pdf(datac[i],mu[j]+muc[k],std::sqrt(std::pow(sigmac[k],2)+std::pow(sigma[j],2)));
+                                    +gaussian_pdf(datac[i],theta[j]+thetac[k],std::sqrt(std::pow(kconstc[k],2)+std::pow(kconst[j],2)));
                 if (probabilitiesc[K*k+j]>max){
                     max = probabilitiesc[K*k+j];
                 }
@@ -216,7 +217,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             }
         }
         //Assign a convoluted gaussian
-        multinomial_1(r, probabilitiesc, choicec);
+        thetaltinomial_1(r, probabilitiesc, choicec);
         //Save the identity
         //We do not compute the statistics because they will have to be updated since this dataset is used for sampling twice
         for (unsigned int j = 0; j < K; j++){
@@ -245,40 +246,40 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
                 n[j][k] += id[k][j][i];
-                x[j][k] += id[k][j][i]*(datac[i]-muc[k]);
-                x2[j][k] += id[k][j][i]*std::pow(datac[i]-mu[j]-muc[k],2);
+                x[j][k] += id[k][j][i]*(datac[i]-thetac[k]);
+                x2[j][k] += id[k][j][i]*std::pow(datac[i]-theta[j]-thetac[k],2);
             }
         }
     }
     //Sample the variances
-    //sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
-    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, theta, kconst);
+    //sample_effective_gamma(r, n, x2, kconstc, kconst, kconstnew, kconstWidth);
+    slice_effective_gamma(r, n, x2, kconstc, kconst, kconstnew, theta, kconst);
     //Sample the means
     for (unsigned int j = 0; j < K; j++){
         //Convoluted terms
         for (unsigned int k = 0; k < Kc; k++){
-            effsigma += n[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
-            effmean += x[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
+            effkconst += n[j][k]/(std::pow(kconstc[k],2)+std::pow(kconstnew[j],2));
+            effmean += x[j][k]/(std::pow(kconstc[k],2)+std::pow(kconstnew[j],2));
         }
         //Autofluorescence terms
-        effsigma += n[j][Kc]/(std::pow(sigmanew[j],2));
-        effmean += x[j][Kc]/(std::pow(sigmanew[j],2));
+        effkconst += n[j][Kc]/(std::pow(kconstnew[j],2));
+        effmean += x[j][Kc]/(std::pow(kconstnew[j],2));
         
-        if (effsigma == 0){
-            munew[j] = mu[j];
+        if (effkconst == 0){
+            thetanew[j] = theta[j];
         }else{
-            effmean = effmean/effsigma;
-            effsigma = 1/effsigma;
+            effmean = effmean/effkconst;
+            effkconst = 1/effkconst;
 
-            if(std::isnan(effsigma)==false){
-                std::normal_distribution<double> gaussian(effmean, effsigma);
-                munew[j] = gaussian(r);
+            if(std::isnan(effkconst)==false){
+                std::normal_distribution<double> gaussian(effmean, effkconst);
+                thetanew[j] = gaussian(r);
             }
         }
 
         //Clean variables
         effmean = 0;
-        effsigma = 0;
+        effkconst = 0;
     }    
 
     //Sample the convoluted variance and mean
@@ -287,35 +288,35 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
                 nc[k][j] += id[k][j][i];
-                xc[k][j] += id[k][j][i]*(datac[i]-munew[j]);
-                x2c[k][j] += id[k][j][i]*std::pow(datac[i]-munew[j]-muc[k],2);
+                xc[k][j] += id[k][j][i]*(datac[i]-thetanew[j]);
+                x2c[k][j] += id[k][j][i]*std::pow(datac[i]-thetanew[j]-thetac[k],2);
             }
         }
     }
     //Sample the variances
-    //sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
-    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, theta, kconst);
+    //sample_effective_gamma(r, nc, x2c, kconstnew, kconstc, kconstnewc, kconstWidth);
+    slice_effective_gamma(r, nc, x2c, kconstnew, kconstc, kconstnewc, theta, kconst);
     //Sample the means
     for (unsigned int k = 0; k < Kc; k++){
         for (unsigned int j = 0; j < K; j++){
             //I have to solve the problem of the sampling
-            effsigma += nc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
-            effmean += xc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
+            effkconst += nc[k][j]/(std::pow(kconstnewc[k],2)+std::pow(kconstnew[j],2));
+            effmean += xc[k][j]/(std::pow(kconstnewc[k],2)+std::pow(kconstnew[j],2));
         }
-        if (effsigma == 0){
-            munewc[k] = muc[k];
+        if (effkconst == 0){
+            thetanewc[k] = thetac[k];
         }else{
-            effmean = effmean/effsigma;
-            effsigma = 1/effsigma;
+            effmean = effmean/effkconst;
+            effkconst = 1/effkconst;
 
-            if(std::isnan(effsigma)==false){
-                std::normal_distribution<double> gaussian(effmean, effsigma);
-                munewc[k] = gaussian(r);
+            if(std::isnan(effkconst)==false){
+                std::normal_distribution<double> gaussian(effmean, effkconst);
+                thetanewc[k] = gaussian(r);
             }
         }
         //Clean variables
         effmean = 0;
-        effsigma = 0;
+        effkconst = 0;
     }    
 
     return;
@@ -323,56 +324,52 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
 void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
                                 int ignored_iterations, int iterations, int nChains,
-                                int K, int Kc, double alpha, double alphac, double theta, double kconst, bool initialised, bool showProgress, int seed){
+                                int K, int Kc, double alpha, double alphac, 
+                                double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
+                                double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                                double priorbias_sigma, double priorbias_min, 
+                                bool initialised, bool showProgress, int seed){
     //Variables for the random generation
     std::mt19937 r;
     r.seed(seed);
 
-    std::vector<double> pi(K), mu(K), sigma(K), pinew(K), munew(K), sigmanew(K);
+    std::vector<double> pi(K), theta(K), kconst(K), pinew(K), thetanew(K), kconstnew(K);
 
-    std::vector<double> pic(Kc), muc(Kc), sigmac(Kc), pinewc(Kc), munewc(Kc), sigmanewc(Kc);
+    std::vector<double> pic(Kc), thetac(Kc), kconstc(Kc), pinewc(Kc), thetanewc(Kc), kconstnewc(Kc);
+
+    double bias, biasnew;
 
     std::vector<std::vector<std::vector<double>>> id(Kc,std::vector<std::vector<double>>(K,std::vector<double>(datac.size())));
 
-    double var = 0, varc = 0, mean = 0, meanc = 0;
-    //Compute statistics
-    for (int i = 0; i < data.size(); i++){
-        mean += data[i]/data.size();
-    }
-    for (int i = 0; i < data.size(); i++){
-        var += std::pow(data[i]-mean,2)/data.size();
-    }
-    for (int i = 0; i < datac.size(); i++){
-        meanc += datac[i]/datac.size();
-    }
-    for (int i = 0; i < datac.size(); i++){
-        varc += std::pow(datac[i]-meanc,2)/datac.size();
-    }
     //Initialise
+    //Initialized sampling from the prior
     if (!initialised){
-        std::normal_distribution<double> gaussian(mean,std::sqrt(varc));
+        std::gamma_distribution<double> dist(priortheta_k,priortheta_theta);
+        std::gamma_distribution<double> dist2(priork_k,priork_theta);
         for (int i = 0; i < K; i++){
             pi[i] = 1;
-            mu[i] = gaussian(r);
-            sigma[i] = std::sqrt(var)/10;
+            theta[i] = dist(r);
+            kconst[i] = dist2(r);
         }
 
-        std::normal_distribution<double> gaussianc(meanc-mean,std::sqrt(varc));
-        for (int i = 0; i < Kc; i++){
+        dist = std::gamma_distribution<double>(priortheta_kc,priortheta_thetac);
+        dist2 = std::gamma_distribution<double>(priork_kc,priork_thetac);
+        for (int i = 0; i < K; i++){
             pic[i] = 1;
-            muc[i] = gaussianc(r);
-            sigmac[i] = std::sqrt(varc)/10;
+            thetac[i] = dist(r);
+            kconstc[i] = dist2(r);
         }
+        bias = priorbias_min;
     }else{
         for (int i = 0; i < K; i++){
             pi[i] = posterior[pos0][i];
-            mu[i] = posterior[pos0][K+i];
-            sigma[i] = posterior[pos0][2*K+i];
+            theta[i] = posterior[pos0][K+i];
+            kconst[i] = posterior[pos0][2*K+i];
         }
         for (int i = 0; i < Kc; i++){
             pic[i] = posterior[pos0][3*K+i];
-            muc[i] = posterior[pos0][3*K+Kc+i];
-            sigmac[i] = posterior[pos0][3*K+2*Kc+i];
+            thetac[i] = posterior[pos0][3*K+Kc+i];
+            kconstc[i] = posterior[pos0][3*K+2*Kc+i];
         }
     }
     
@@ -382,15 +379,18 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
     //Ignorable, steps
     for (int i = 0; i < ignored_iterations; i++){
         Gibbs_convolved_step(r, data, datac,
-                         pi, mu, sigma, pinew, munew, sigmanew, alpha,
-                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
-                         id, theta, kconst);
+                         pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
+                         pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
+                         bias, biasnew,
+                         priorbias_sigma, priorbias_min, 
+                         id);
         pi = pinew;
-        mu = munew;
-        sigma = sigmanew;
+        theta = thetanew;
+        kconst = kconstnew;
         pic = pinewc;
-        muc = munewc;
-        sigmac = sigmanewc;
+        thetac = thetanewc;
+        kconstc = kconstnewc;
+        bias = biasnew;
 
         if(showProgress){
             if(i % progressStep == 0){
@@ -412,25 +412,29 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
     //Recorded steps
     for (unsigned int i = 0; i < iterations; i++){
         Gibbs_convolved_step(r, data, datac,
-                         pi, mu, sigma, pinew, munew, sigmanew, alpha,
-                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
-                         id, theta, kconst);
+                         pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
+                         pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
+                         priorbias_sigma, priorbias_min,
+                         id);
         pi = pinew;
-        mu = munew;
-        sigma = sigmanew;
+        theta = thetanew;
+        kconst = kconstnew;
         for (unsigned int j = 0; j < K; j++){
             posterior[pos0+i][j] = pinew[j];
-            posterior[pos0+i][K+j] = munew[j];
-            posterior[pos0+i][2*K+j] = sigmanew[j];
+            posterior[pos0+i][K+j] = thetanew[j];
+            posterior[pos0+i][2*K+j] = kconstnew[j];
         }
         pic = pinewc;
-        muc = munewc;
-        sigmac = sigmanewc;
+        thetac = thetanewc;
+        kconstc = kconstnewc;
         for (unsigned int j = 0; j < Kc; j++){
             posterior[pos0+i][3*K+j] = pinewc[j];
-            posterior[pos0+i][3*K+Kc+j] = munewc[j];
-            posterior[pos0+i][3*K+2*Kc+j] = sigmanewc[j];
+            posterior[pos0+i][3*K+Kc+j] = thetanewc[j];
+            posterior[pos0+i][3*K+2*Kc+j] = kconstnewc[j];
         }
+        bias = biasnew;
+        posterior[pos0+i][3*K+3*Kc] = biasnew;
+
 
         if(showProgress){
             if(i % progressStep == 0){
@@ -451,7 +455,12 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 }
 std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
                           int ignored_iterations, int iterations, int nChains,
-                          int K, int Kc, double alpha, double alphac, double theta, double kconst, std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
+                          int K, int Kc, 
+                          double alpha, double alphac, 
+                          double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
+                          double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
+                          double priorbias_sigma, double priorbias_min,
+                          std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
 
     //Variable to check if initialised
     bool initialised = false;
@@ -492,7 +501,10 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
         int seedchain = seed+i;
         chains.push_back(std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
                                 ignored_iterations, iterations, nChains,
-                                K, Kc, alpha, alphac, theta, kconst,
+                                K, Kc, alpha, alphac, 
+                                priortheta_k, priortheta_theta, priork_k, priork_theta, 
+                                priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, 
+                                priorbias_sigma, priorbias_min,
                                 initialised, showProgress, seedchain)); //Need explicit by reference std::refs
     }
     //Wait for rejoining
