@@ -8,7 +8,7 @@ double
 gamma_pdf(double, double, double, double);
 
 double
-gamma_sum_pdf(double, double, double, double, double, double, int);
+gamma_sum_pdf(double, double, double, double, double, double, double = 0.999);
 
 double
 gaussian_pdf(double, double, double);
