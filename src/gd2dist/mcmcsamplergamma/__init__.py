@@ -1,2 +1,2 @@
-from .mcmcsamplergamma import mcmcsamplergamma
+#from .mcmcsamplergamma import mcmcsamplergamma
 from .mcmcposteriorsamplergamma import checkfunction

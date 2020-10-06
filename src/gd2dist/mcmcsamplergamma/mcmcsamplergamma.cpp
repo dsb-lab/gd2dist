@@ -35,11 +35,12 @@ double gamma_sum_pdf_batch(std::vector<double> &datac, double theta, double kcon
     int loc;
     for(int i = 0; i < counter; i++){
         loc = id[i];
+        //loglikelihood = gamma_sum_pdf(datac[loc],theta,kconst,thetac,kconstc,bias,precission);
         loglikelihood += gamma_sum_pdf(datac[loc],theta,kconst,thetac,kconstc,bias,precission);
     }
     //Add priors
-    loglikelihood += gamma_pdf(thetac,priortheta_thetac,priortheta_kc,0); 
-    loglikelihood += gamma_pdf(kconstc,priork_thetac,priork_kc,0); 
+    //loglikelihood += gamma_pdf(thetac,priortheta_thetac,priortheta_kc,0); 
+    //loglikelihood += gamma_pdf(kconstc,priork_thetac,priork_kc,0); 
     
     return loglikelihood;
 }
