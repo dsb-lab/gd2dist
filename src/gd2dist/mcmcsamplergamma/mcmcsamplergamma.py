@@ -35,7 +35,9 @@ class mcmcsamplergamma:
         return
 
     def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, 
-            priortheta_k, priortheta_theta, priork_k, priork_theta, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, priorbias_sigma,
+            priortheta_k = None, priortheta_theta = None, priork_k = None, priork_theta = None, priortheta_kc = None, priortheta_thetac = None, priork_kc = None, priork_thetac = None,
+            priorbias_sigma = None,
+            precission = 0.99,
             initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
@@ -65,30 +67,30 @@ class mcmcsamplergamma:
         self.ignored_iterations = ignored_iterations
         self.chains = chains
 
-        self.priortheta_k
-        self.priortheta_theta
-        self.priork_k
-        self.priork_theta
+        self.priortheta_k = 1
+        self.priortheta_theta = 10
+        self.priork_k = 1
+        self.priork_theta = 10
 
-        self.priortheta_kc
-        self.priortheta_thetac
-        self.priork_kc
-        self.priork_thetac
+        self.priortheta_kc = 1
+        self.priortheta_thetac = 10
+        self.priork_kc = 1
+        self.priork_thetac = 10
 
-        self.priorbias_sigma
+        self.priorbias_sigma = 100 
+        self.priorbias_min = np.min([dataNoise,dataConvolution])
 
-        #Assign an approximate theta to make the prior vague
-        if theta == None:
-            self.theta = np.std(dataConvolution)
+        self.precission = precission
 
-        self.samples = np.array(fit(dataNoise, dataConvolution, 
-                                ignored_iterations, iterations, chains, 
-                                self.K, self.Kc, 
-                                self.alpha, self.alphac, 
-                                self.priortheta_k, self.priortheta_theta, self.priork_k, self.priork_theta,
-                                self.priortheta_kc, self.priortheta_thetac, self.priork_kc, self.priork_thetac,
-                                self.priorbias_sigma,
-                                initial_conditions, show_progress, seed))
+        self.samples = np.array(fit(dataNoise, dataConvolution,
+                          self.ignored_iterations, self.iterations, self.chains,
+                          self.K, self.Kc, 
+                          self.alpha, self.alphac, 
+                          self.priortheta_k, self.priortheta_theta, self.priork_k, self.priork_theta, 
+                          self.priortheta_kc, self.priortheta_thetac, self.priork_kc, self.priork_thetac, 
+                          self.priorbias_sigma, self.priorbias_min,
+                          self.precission,
+                          initial_conditions, show_progress, seed))
         
         self.fitted = True
 

@@ -83,7 +83,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                     double & bias, double & biasnew,
                     double priorbias_sigma, double priorbias_min,
                     std::vector<std::vector<int>> id, std::vector<std::vector<std::vector<int>>> idc,
-                    int precission);
+                    double precission);
 
 void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
                                 int ignored_iterations, int iterations, int nChains,
@@ -91,7 +91,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                                 double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
                                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                                 double priorbias_sigma, double priorbias_min, 
-                                bool initialised, bool showProgress, int seed, int precission);
+                                bool initialised, bool showProgress, int seed, double precission);
 
 std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
                           int ignored_iterations, int iterations, int nChains,
@@ -100,7 +100,7 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
                           double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
                           double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                           double priorbias_sigma, double priorbias_min,
-                          int precission,
+                          double precission,
                           std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed);
 
 #endif

@@ -33,14 +33,15 @@ double gamma_sum_pdf_batch(std::vector<double> &datac, double theta, double kcon
     
     double loglikelihood = 0;
     int loc;
+    double x;
+    double logx;
     for(int i = 0; i < counter; i++){
         loc = id[i];
-        //loglikelihood = gamma_sum_pdf(datac[loc],theta,kconst,thetac,kconstc,bias,precission);
         loglikelihood += gamma_sum_pdf(datac[loc],theta,kconst,thetac,kconstc,bias,precission);
     }
     //Add priors
-    //loglikelihood += gamma_pdf(thetac,priortheta_thetac,priortheta_kc,0); 
-    //loglikelihood += gamma_pdf(kconstc,priork_thetac,priork_kc,0); 
+    loglikelihood += gamma_pdf(thetac,priortheta_thetac,priortheta_kc,0); 
+    loglikelihood += gamma_pdf(kconstc,priork_thetac,priork_kc,0); 
     
     return loglikelihood;
 }
@@ -58,7 +59,7 @@ double gamma_pdf_full_batch(std::vector<double> &datac, double theta, double kco
     //Add fluorescence
     loglikelihood += gamma_pdf_batch(x, xlog, n, theta, kconst, priortheta_k, priortheta_theta, priork_k, priork_theta);
     for(int i = 0; i < thetac.size(); i++){
-        loglikelihood += gamma_sum_pdf_batch(datac, theta, kconst, thetac[i], kconstc[i], bias, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, id[i], counter[i]);
+        loglikelihood += gamma_sum_pdf_batch(datac, theta+0.0001, kconst+0.0001, thetac[i]+0.0001, kconstc[i]+0.0001, bias, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, id[i], counter[i]);
     }
     return loglikelihood;
 }
@@ -589,7 +590,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                     double & bias, double & biasnew,
                     double priorbias_sigma, double priorbias_min,
                     std::vector<std::vector<int>> id, std::vector<std::vector<std::vector<int>>> idc,
-                    int precission){
+                    double precission){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -653,7 +654,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         for (unsigned int j = 0; j < K; j++){
             for (unsigned int k = 0; k < Kc; k++){
                 probabilitiesc[K*k+j] = std::log(pic[k])+std::log(pi[j])
-                                    +gamma_sum_pdf(datac[i],theta[j],kconst[j],thetac[k],kconstc[k],bias,precission);
+                                    +gamma_sum_pdf(datac[i],theta[j]+0.0001,kconst[j]+0.0001,thetac[k]+0.0001,kconstc[k]+0.0001,bias,precission);
                 if (probabilitiesc[K*k+j]>max){
                     max = probabilitiesc[K*k+j];
                 }
@@ -702,20 +703,20 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                 bias, precission);
     //Sample the kconst
-    slice_k(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, datac, idc, counterc,
+    /*slice_k(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, datac, idc, counterc,
                 priortheta_k, priortheta_theta, priork_k, priork_theta,
                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                 bias, precission);
 
     //Sample the convolution
     //Sample the thetas
-    slice_thetac(r, theta, kconst, thetac, kconstc, thetanewc, datac, idc, counterc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
+    /*slice_thetac(r, theta, kconst, thetac, kconstc, thetanewc, datac, idc, counterc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
     //Sample the kconst
     slice_kc(r, theta, kconst, thetac, kconstc, kconstnewc, datac, idc, counterc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
 
     //Sample the bias
     slice_bias(r,theta, kconst, thetac, kconstc, data, datac, id, counter, idc, counterc, bias, biasnew, priorbias_sigma, precission);
-
+    */
     return;
 }
 
@@ -725,7 +726,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                                 double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
                                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                                 double priorbias_sigma, double priorbias_min, 
-                                bool initialised, bool showProgress, int seed, int precission){
+                                bool initialised, bool showProgress, int seed, double precission){
     //Variables for the random generation
     std::mt19937 r;
     r.seed(seed);
@@ -859,7 +860,7 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
                           double priortheta_k, double priortheta_theta, double priork_k, double priork_theta, 
                           double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac, 
                           double priorbias_sigma, double priorbias_min,
-                          int precission,
+                          double precission,
                           std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
 
     //Variable to check if initialised
