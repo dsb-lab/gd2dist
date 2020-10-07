@@ -6,6 +6,15 @@
 
 double
 gamma_pdf(double x, double theta, double k, double bias){
+
+    //Check boundary of the parameters
+    if(theta <= 0){
+        throw std::range_error("theta has to be in the [0,1) range.");
+    }
+    if(k <= 0){
+        throw std::range_error("k has to be in the [0,1) range.");
+    }
+
     return -(x+bias)/theta+(k-1)*std::log(x+bias)-k*std::log(theta)-std::lgamma(k);
 }
 
