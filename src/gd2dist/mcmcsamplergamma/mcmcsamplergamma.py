@@ -68,14 +68,14 @@ class mcmcsamplergamma:
         self.chains = chains
 
         self.priortheta_k = 1
-        self.priortheta_theta = 10
+        self.priortheta_theta = 10000
         self.priork_k = 1
-        self.priork_theta = 10
+        self.priork_theta = 100000
 
         self.priortheta_kc = 1
-        self.priortheta_thetac = 10
+        self.priortheta_thetac = 100000
         self.priork_kc = 1
-        self.priork_thetac = 10
+        self.priork_thetac = 100000
 
         self.priorbias_sigma = 100 
         self.priorbias_min = np.min([dataNoise,dataConvolution])

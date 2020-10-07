@@ -42,10 +42,10 @@ double gamma_pdf_full_batch_slow(std::vector<double> &data, std::vector<double> 
 
 void slice_theta(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
                             std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
-                            std::vector<double> &thetanew, std::vector<double> &datac, std::vector<std::vector<std::vector<int>>> &id, std::vector<std::vector<int>> &counter,
+                            std::vector<double> &kconstnew, std::vector<double> &datac, std::vector<std::vector<std::vector<int>>> &id, std::vector<std::vector<int>> &counter,
                             double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
                             double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission);
+                            double bias, double precission, std::string method);
 
 void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
                             std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
