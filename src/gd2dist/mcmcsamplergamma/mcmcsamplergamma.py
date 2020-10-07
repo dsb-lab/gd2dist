@@ -37,7 +37,7 @@ class mcmcsamplergamma:
     def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, 
             priortheta_k = None, priortheta_theta = None, priork_k = None, priork_theta = None, priortheta_kc = None, priortheta_thetac = None, priork_kc = None, priork_thetac = None,
             priorbias_sigma = None,
-            precission = 0.99,
+            precission = 0.99, method = "moments",
             initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
@@ -81,6 +81,7 @@ class mcmcsamplergamma:
         self.priorbias_min = np.min([dataNoise,dataConvolution])
 
         self.precission = precission
+        self.method = method
 
         self.samples = np.array(fit(dataNoise, dataConvolution,
                           self.ignored_iterations, self.iterations, self.chains,
@@ -89,7 +90,7 @@ class mcmcsamplergamma:
                           self.priortheta_k, self.priortheta_theta, self.priork_k, self.priork_theta, 
                           self.priortheta_kc, self.priortheta_thetac, self.priork_kc, self.priork_thetac, 
                           self.priorbias_sigma, self.priorbias_min,
-                          self.precission,
+                          self.precission, self.method,
                           initial_conditions, show_progress, seed))
         
         self.fitted = True

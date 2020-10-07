@@ -7,36 +7,12 @@
 double
 gamma_pdf(double x, double theta, double k, double bias){
 
-    //Check boundary of the parameters
-    if(theta <= 0){
-        throw std::range_error("theta has to be in the [0,1) range.");
-    }
-    if(k <= 0){
-        throw std::range_error("k has to be in the [0,1) range.");
-    }
-
     return -(x+bias)/theta+(k-1)*std::log(x+bias)-k*std::log(theta)-std::lgamma(k);
 }
 
 double
 gamma_sum_pdf(double x, double theta1, double k1, double theta2, double k2, double bias, double precission, std::string method){
 
-    if(precission > 0.9999999 || precission < 0){
-        throw std::range_error("precission has to be in the [0,1) range.");
-    }
-    //Check boundary of the parameters
-    if(theta1 <= 0){
-        throw std::range_error("theta1 has to be in the [0,1) range.");
-    }
-    if(theta2 <= 0){
-        throw std::range_error("theta2 has to be in the [0,1) range.");
-    }
-    if(k1 <= 0){
-        throw std::range_error("k1 has to be in the [0,1) range.");
-    }
-    if(k2 <= 0){
-        throw std::range_error("k2 has to be in the [0,1) range.");
-    }
     //Original Moschopoulos version
     /*double aux;
     //Exchange if necessary theta1 = min(theta_i)

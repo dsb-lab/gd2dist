@@ -20,7 +20,7 @@ PYBIND11_MODULE(mcmcposteriorsamplergamma, m) {
         py::arg("priortheta_k"), py::arg("priortheta_theta"), py::arg("priork_k"), py::arg("priork_theta"),
         py::arg("priortheta_kc"), py::arg("priortheta_thetac"), py::arg("priork_kc"), py::arg("priork_thetac"),
         py::arg("priorbias_sigma"), py::arg("priorbias_min"),
-        py::arg("precission"),
+        py::arg("precission"), py::arg("method"),
         py::arg("initial_conditions") = std::vector<double>{}, py::arg("showProgress"), py::arg("seed"));
 
     /*m.def("logLikelihood", &logLikelihood, "Function for the fit process of the mcmc model",
@@ -28,6 +28,6 @@ PYBIND11_MODULE(mcmcposteriorsamplergamma, m) {
         py::arg("pic"), py::arg("muc"), py::arg("sigmac"),
         py::arg("data"), py::arg("datac"));*/
 
-    m.def("checkfunction", &gamma_sum_pdf, py::call_guard<py::gil_scoped_release>());
+    m.def("checkfunction", &gamma_pdf, py::call_guard<py::gil_scoped_release>());
     
 }
