@@ -10,7 +10,7 @@ gamma_pdf(double x, double theta, double k, double bias){
 }
 
 double
-gamma_sum_pdf(double x, double theta1, double k1, double theta2, double k2, double bias, double precission){
+gamma_sum_pdf(double x, double theta1, double k1, double theta2, double k2, double bias, double precission, std::string method){
 
     if(precission > 0.9999999 || precission < 0){
         throw std::range_error("precission has to be in the [0,1) range.");
@@ -63,46 +63,48 @@ gamma_sum_pdf(double x, double theta1, double k1, double theta2, double k2, doub
     likelihood = std::log(likelihood) + max + std::log(C);
     */
 
-    //Matching moments method approximation
-    /*
-    double likelihood;
-
-    double mu = theta1*k1+theta2*k2;
-    double thetastar = mu*mu/(theta1*theta1*k1+theta2*theta2*k2);
-    double kconststar = (theta1*theta1*k1+theta2*theta2*k2)/mu;
-    
-    likelihood = gamma_pdf(x,thetastar,kconststar,bias);
-    */
-
-    double aux;
-    //Exchange if necessary theta1 = min(theta_i)
-    if(theta1 > theta2){
-        aux = theta1;
-        theta1 = theta2;
-        theta2 = aux;
-
-        aux = k1;
-        k1 = k2;
-        k2 = aux;
-    }
-    //Make rho
-    double rho = k1+k2;
-    //Make sum
-    double r = k2;
-    double p = theta1/theta2;
-    double max = -INFINITY;
-    double delta;
     double likelihood = 0;
-    double total = 0;
-    int i = 0;
-    do{
-        delta = boost::math::pdf(boost::math::negative_binomial(r,p),i);
-        likelihood += std::exp(-(x+bias)/theta1+(rho+i-1)*std::log(x+bias)-(rho+i)*std::log(theta1)-std::lgamma(rho+i)+std::log(delta));
-        i++;
-        total += delta;
-    }while(total < precission);
+    if(method== "moments" || theta1 == theta2){ //Choose moments method
 
-    likelihood = std::log(likelihood);
+        double mu = theta1*k1+theta2*k2;
+        double s = theta1*theta1*k1+theta2*theta2*k2;
+        double thetastar = s/mu;
+        double kconststar = mu*mu/s;
+        
+        likelihood = gamma_pdf(x,thetastar,kconststar,bias);
+
+    }else if(method == "exact"){ //Choose exact method
+
+        double aux;
+        //Exchange if necessary theta1 = min(theta_i)
+        if(theta1 > theta2){
+            aux = theta1;
+            theta1 = theta2;
+            theta2 = aux;
+
+            aux = k1;
+            k1 = k2;
+            k2 = aux;
+        }
+        //Make rho
+        double rho = k1+k2;
+        //Make sum
+        double r = k2;
+        double p = theta1/theta2;
+        double max = -INFINITY;
+        double delta;
+        double total = 0;
+        int i = 0;
+        do{
+            delta = boost::math::pdf(boost::math::negative_binomial(r,p),i);
+            likelihood += std::exp(-(x+bias)/theta1+(rho+i-1)*std::log(x+bias)-(rho+i)*std::log(theta1)-std::lgamma(rho+i)+std::log(delta));
+            i++;
+            total += delta;
+        }while(total < precission);
+
+        likelihood = std::log(likelihood);
+
+    }
 
     return likelihood;
 }

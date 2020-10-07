@@ -28,6 +28,6 @@ PYBIND11_MODULE(mcmcposteriorsamplergamma, m) {
         py::arg("pic"), py::arg("muc"), py::arg("sigmac"),
         py::arg("data"), py::arg("datac"));*/
 
-    //m.def("checkfunction", &gamma_sum_pdf_batch, py::call_guard<py::gil_scoped_release>());
+    m.def("checkfunction", &gamma_sum_pdf, py::call_guard<py::gil_scoped_release>());
     
 }
