@@ -36,8 +36,7 @@ class mcmcsamplergamma:
 
     def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, 
             priortheta_k = None, priortheta_theta = None, priork_k = None, priork_theta = None, priortheta_kc = None, priortheta_thetac = None, priork_kc = None, priork_thetac = None,
-            priorbias_sigma = None,
-            precission = 0.99, method = "moments",
+            precission = 0.99, method = "moments", bias = None,
             initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
@@ -67,18 +66,20 @@ class mcmcsamplergamma:
         self.ignored_iterations = ignored_iterations
         self.chains = chains
 
-        self.priortheta_k = 1
-        self.priortheta_theta = 10000
-        self.priork_k = 1
-        self.priork_theta = 100000
+        self.priortheta_k = 2
+        self.priortheta_theta = 1000
+        self.priork_k = 2
+        self.priork_theta = 1000
 
-        self.priortheta_kc = 1
-        self.priortheta_thetac = 100000
-        self.priork_kc = 1
-        self.priork_thetac = 100000
+        self.priortheta_kc = 2
+        self.priortheta_thetac = 1000
+        self.priork_kc = 2
+        self.priork_thetac = 1000
 
-        self.priorbias_sigma = 100 
-        self.priorbias_min = np.min([dataNoise,dataConvolution])
+        if bias == None:
+            self.bias = np.min([dataNoise,dataConvolution])-0.01
+        else:
+            self.bias = bias
 
         self.precission = precission
         self.method = method
@@ -89,7 +90,7 @@ class mcmcsamplergamma:
                           self.alpha, self.alphac, 
                           self.priortheta_k, self.priortheta_theta, self.priork_k, self.priork_theta, 
                           self.priortheta_kc, self.priortheta_thetac, self.priork_kc, self.priork_thetac, 
-                          self.priorbias_sigma, self.priorbias_min,
+                          self.bias,
                           self.precission, self.method,
                           initial_conditions, show_progress, seed))
         
