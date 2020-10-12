@@ -35,7 +35,7 @@ class mcmcsamplergamma:
         return
 
     def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, 
-            priortheta_k = None, priortheta_theta = None, priork_k = None, priork_theta = None, priortheta_kc = None, priortheta_thetac = None, priork_kc = None, priork_thetac = None,
+            priors = None,
             precission = 0.99, method = "moments", bias = None,
             initial_conditions = [], show_progress = True, seed = 0):
         """
@@ -66,20 +66,26 @@ class mcmcsamplergamma:
         self.ignored_iterations = ignored_iterations
         self.chains = chains
 
-        self.priortheta_k = 2
-        self.priortheta_theta = 1000
-        self.priork_k = 2
-        self.priork_theta = 1000
-
-        self.priortheta_kc = 2
-        self.priortheta_thetac = 1000
-        self.priork_kc = 2
-        self.priork_thetac = 1000
-
         if bias == None:
-            self.bias = np.min([dataNoise,dataConvolution])-0.01
-        else:
-            self.bias = bias
+            m = np.min([dataNoise,dataConvolution])
+            if m < 0:
+                self.bias = m - 0.01
+            else:
+                self.bias = 0
+        if priors==None:
+            m = np.mean(dataNoise)
+            v = np.var(dataNoise)
+            self.priortheta_theta = 100*v/m
+            self.priork_theta = 100*v/m
+            self.priortheta_k = 2
+            self.priork_k = 2
+            m = np.mean(dataConvolution)
+            v = np.var(dataConvolution)
+            self.priortheta_thetac = 100*v/m
+            self.priork_thetac = 100*v/m
+            self.priortheta_kc = 2
+            self.priork_kc = 2
+
 
         self.precission = precission
         self.method = method

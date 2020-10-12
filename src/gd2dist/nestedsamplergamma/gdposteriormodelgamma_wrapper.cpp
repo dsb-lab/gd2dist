@@ -15,14 +15,14 @@ PYBIND11_MODULE(gdposteriormodelgamma, m) {
     //Declare the simple density estimator class
     py::class_<gdposteriormodelgamma>(m, "gdposteriormodelgamma")
         //Show contructor
-        .def(py::init<std::vector<double>, std::vector<double>, int, int>())
+        .def(py::init<std::vector<double>, std::vector<double>, int, int, double>())
         .def("logLikelihood", &gdposteriormodelgamma::logLikelihood)
         .def("prior", &gdposteriormodelgamma::prior)
         .def_readwrite("K", &gdposteriormodelgamma::K)
         .def_readwrite("Kc", &gdposteriormodelgamma::Kc)
         .def_readwrite("data", &gdposteriormodelgamma::dataNoise)
         .def_readwrite("datac", &gdposteriormodelgamma::dataConvolution)
-        .def_readwrite("priorbias_sigma", &gdposteriormodelgamma::priorbias_sigma)
+        .def_readwrite("bias", &gdposteriormodelgamma::bias)
         .def_readwrite("priortheta_theta", &gdposteriormodelgamma::priortheta_theta)
         .def_readwrite("priortheta_k", &gdposteriormodelgamma::priortheta_k)
         .def_readwrite("priork_theta", &gdposteriormodelgamma::priork_theta)

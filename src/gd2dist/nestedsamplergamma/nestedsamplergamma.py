@@ -25,12 +25,12 @@ class nestedsamplergamma(gdposteriormodelgamma):
         --------------
             nothing
         """
-        gdposteriormodelgamma.__init__(self,[],[],K,Kc)
+        gdposteriormodelgamma.__init__(self,[],[],K,Kc,0)
         self.fitted = False
 
         return
 
-    def fit(self, dataNoise, dataConvolution, **kwargs):
+    def fit(self, dataNoise, dataConvolution, priors=None, bias = None, **kwargs):
         """
         Fit the model to the posterior distribution
 
@@ -49,6 +49,27 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
         self.data = dataNoise
         self.datac = dataConvolution
+        if bias == None:
+            m = np.min([dataNoise,dataConvolution])
+            if m < 0:
+                self.bias = m - 0.01
+            else:
+                self.bias = 0
+        else:
+            self.bias = bias
+        if priors == None:
+            m = np.mean(dataNoise)
+            v = np.var(dataNoise)
+            self.priortheta_theta = 10*(v/m)**0.5
+            self.priork_theta = 10*(v/m)**0.5
+            self.priortheta_k = 2
+            self.priork_k = 2
+            m = np.mean(dataConvolution)
+            v = np.var(dataConvolution)
+            self.priortheta_thetac = 10*(v/m)**0.5
+            self.priork_thetac = 10*(v/m)**0.5
+            self.priortheta_kc = 2
+            self.priork_kc = 2
 
         #separate kargs for the two different samplers functions
         #nested sampler function
@@ -62,7 +83,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
         gdposteriormodelgamma.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
-        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc+1, **nestedsampler_dict)
+        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
         dynestyModel.run_nested(**run_nested_dict)
         self.results = {}
         self.results["samples"] = dynestyModel.results["samples"]
@@ -172,13 +193,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size))
+            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = self.bias))
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
             else:
-                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
 
         return
 
@@ -197,13 +218,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size))
+            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = self.bias))
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
             else:
-                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
 
         return
 
@@ -222,13 +243,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size))
+            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = self.bias))
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
             else:
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
 
         return
 
@@ -246,7 +267,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_autofluorescence(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size))
+        return  np.array(score_autofluorescence_gamma(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = self.bias))
 
     def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -262,7 +283,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_deconvolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size))
+        return  np.array(score_deconvolution_gamma(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = self.bias))
 
     def score_convolution(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -278,4 +299,4 @@ class nestedsamplergamma(gdposteriormodelgamma):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size))
+        return  np.array(score_convolution_gamma(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = self.bias))

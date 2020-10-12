@@ -14,7 +14,7 @@ class gdposteriormodelgamma{
         double dataMin;
         double dataMax;
 
-        double priorbias_sigma;
+        double bias;
 
         double priortheta_theta;
         double priortheta_k;
@@ -28,7 +28,7 @@ class gdposteriormodelgamma{
 
         double precission;
 
-        gdposteriormodelgamma(std::vector<double>,std::vector<double>,int, int);
+        gdposteriormodelgamma(std::vector<double>,std::vector<double>,int, int, double);
         double logLikelihood(std::vector<double>&);
         std::vector<double> prior(std::vector<double>&);
 };

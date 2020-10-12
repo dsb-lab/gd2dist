@@ -9,11 +9,12 @@
 #include "include/boost/math/special_functions/detail/lgamma_small.hpp"
 #include "pybind11/pybind11.h"
 
-gdposteriormodelgamma::gdposteriormodelgamma(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
+gdposteriormodelgamma::gdposteriormodelgamma(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc, double bias){
     dataNoise = datanoise;
     dataConvolution = dataconvolution;
     K = k;
     Kc = kc;
+    bias = bias;
 }
 
 double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
@@ -21,14 +22,13 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
     double max = -INFINITY;
     std::vector<double> exponent(K*Kc,0);
     double total = 0;
-    int L = parameters.size()-1;
 
     for(int i = 0; i < dataNoise.size(); i++){
         //Compute exponents and find the maximum
         max = -INFINITY;
 //        pybind11::print(dataNoise.size());
         for(int j = 0; j < K; j++){
-            exponent[j] = gamma_pdf(dataNoise[i],parameters[K+j],parameters[2*K+j],parameters[L]);
+            exponent[j] = gamma_pdf(dataNoise[i],parameters[K+j],parameters[2*K+j],bias);
             
             if (exponent[j] > max){
                 max = exponent[j];
@@ -47,7 +47,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         max = -INFINITY;
         for(int j = 0; j < K; j++){
             for(int k = 0; k < Kc; k++){
-                exponent[j*Kc+k] = gamma_sum_pdf(dataConvolution[i],parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],parameters[L],precission);
+                exponent[j*Kc+k] = gamma_sum_pdf(dataConvolution[i],parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],bias,precission);
                 if (exponent[j*Kc+k] > max){
                     max = exponent[j*Kc+k];
                 }
@@ -72,7 +72,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
 
 std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
 
-    std::vector<double> transformed(3*K+3*Kc+1,0);
+    std::vector<double> transformed(3*K+3*Kc,0);
 
     double total = 0;
     //Uniform sphere
@@ -109,9 +109,6 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
     for(int i = 0; i < Kc; i++){
         transformed[3*K+2*Kc+i] = priork_thetac*boost::math::gamma_p_inv(priork_kc,uniform[3*K+2*Kc+i]);
     }
-
-    //Bias
-    transformed[3*K+3*Kc] = std::pow(2,1.0/2)*priorbias_sigma*boost::math::erf_inv(uniform[3*K+3*Kc]);
 
     return transformed;
 }
