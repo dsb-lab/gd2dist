@@ -1237,8 +1237,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                 probabilitiesc[K*k+j] = std::exp(probabilitiesc[K*k+j]);
             }
         }
+
         //Assign a convolved gamma
         multinomial_1(r, probabilitiesc, choicec);
+
         //Save the identity
         //Compute the statistics here because they will have to be updated since this dataset is used for sampling twice
         for (unsigned int j = 0; j < K; j++){
@@ -1302,7 +1304,6 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     std::vector<double> pic(Kc), thetac(Kc), kconstc(Kc), pinewc(Kc), thetanewc(Kc), kconstnewc(Kc);
 
-
     if(method == "exact"){
         std::vector<std::vector<std::vector<int>>> idc(K,std::vector<std::vector<int>>(Kc,std::vector<int>(datac.size(),0)));
         std::vector<std::vector<int>> id(K,std::vector<int>(datac.size(),0));
@@ -1314,27 +1315,46 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
             std::gamma_distribution<double> dist2(priork_k,priork_theta);
             for (int i = 0; i < K; i++){
                 pi[i] = 1;
-                theta[i] = 30;//dist(r);
-                kconst[i] = 46;//dist2(r);
+                theta[i] = dist(r);
+                kconst[i] = dist2(r);
             }
 
             dist = std::gamma_distribution<double>(priortheta_kc,priortheta_thetac);
             dist2 = std::gamma_distribution<double>(priork_kc,priork_thetac);
-            for (int i = 0; i < K; i++){
+            for (int i = 0; i < Kc; i++){
                 pic[i] = 1;
-                thetac[i] = 3;//dist(r);
-                kconstc[i] = 50;//dist2(r);
+                thetac[0] = dist(r);
+                kconstc[0] = dist2(r);
+                thetac[1] = dist(r);
+                kconstc[1] = dist2(r);
             }
         }else{
+            double mean = 0;
+            double var = 0;
+            int size = 0;
+
+            size = data.size();
+            for( int i = 0; i < size; i++){
+                mean += data[i]/size;
+                var += data[i]*data[i]/size;
+            }
+            var = var-mean*mean*size;
             for (int i = 0; i < K; i++){
                 pi[i] = posterior[pos0][i];
-                theta[i] = posterior[pos0][K+i];
-                kconst[i] = posterior[pos0][2*K+i];
+                theta[i] = var/mean;
+                kconst[i] = mean/theta[i];
             }
+
+            size = datac.size();
+            for( int i = 0; i < size; i++){
+                mean += datac[i]/size;
+                var += datac[i]*data[i]/size;
+            }
+            var = var-mean*mean*size;
             for (int i = 0; i < Kc; i++){
                 pic[i] = posterior[pos0][3*K+i];
-                thetac[i] = posterior[pos0][3*K+Kc+i];
-                kconstc[i] = posterior[pos0][3*K+2*Kc+i];
+                thetac[i] = var/mean;
+                kconstc[i] = mean/theta[i];
             }
         }
         
@@ -1420,27 +1440,47 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
             std::gamma_distribution<double> dist2(priork_k,priork_theta);
             for (int i = 0; i < K; i++){
                 pi[i] = 1;
-                theta[i] = dist(r);
-                kconst[i] = dist2(r);
+                theta[i] = 4;//dist(r);
+                kconst[i] = 5;//dist2(r);
             }
 
             dist = std::gamma_distribution<double>(priortheta_kc,priortheta_thetac);
             dist2 = std::gamma_distribution<double>(priork_kc,priork_thetac);
-            for (int i = 0; i < K; i++){
+            for (int i = 0; i < Kc; i++){
                 pic[i] = 1;
-                thetac[i] = dist(r);
-                kconstc[i] = dist2(r);
+                thetac[0] = 5;//dist(r);
+                kconstc[0] = 3;//dist2(r);
+                thetac[1] = 5;//dist(r);
+                kconstc[1] = 3;//dist2(r);
             }
         }else{
+        
+            double mean = 0;
+            double var = 0;
+            int size = 0;
+
+            size = data.size();
+            for( int i = 0; i < size; i++){
+                mean += data[i]/size;
+                var += data[i]*data[i]/size;
+            }
+            var = var-mean*mean*size;
             for (int i = 0; i < K; i++){
                 pi[i] = posterior[pos0][i];
-                theta[i] = posterior[pos0][K+i];
-                kconst[i] = posterior[pos0][2*K+i];
+                theta[i] = var/mean;
+                kconst[i] = mean/theta[i];
             }
+
+            size = datac.size();
+            for( int i = 0; i < size; i++){
+                mean += datac[i]/size;
+                var += datac[i]*data[i]/size;
+            }
+            var = var-mean*mean*size;
             for (int i = 0; i < Kc; i++){
                 pic[i] = posterior[pos0][3*K+i];
-                thetac[i] = posterior[pos0][3*K+Kc+i];
-                kconstc[i] = posterior[pos0][3*K+2*Kc+i];
+                thetac[i] = var/mean;
+                kconstc[i] = mean/theta[i];
             }
         }
         
