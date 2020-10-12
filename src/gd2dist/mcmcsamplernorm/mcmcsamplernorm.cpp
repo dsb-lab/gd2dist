@@ -135,13 +135,11 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
 
 void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double>& datac,
                           std::vector<double> & pi, std::vector<double> & mu, std::vector<double> & sigma,
-                          std::vector<double> & pinew, std::vector<double> & munew, std::vector<double> & sigmanew, 
-                          double alpha,
+                          std::vector<double> & pinew, std::vector<double> & munew, std::vector<double> & sigmanew,
                           std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
                           std::vector<double> & pinewc, std::vector<double> & munewc, std::vector<double> & sigmanewc,
-                          double alphac,
-                          std::vector<std::vector<std::vector<double>>> id,
-                          double theta, double kconst){
+                          std::vector<std::vector<std::vector<double>>>& id,
+                          std::vector<double>& priors){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -195,7 +193,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         }
     }
     
-    //Evaluate the convoluted data
+    //Evaluate the Colvolved data
     for (unsigned int i = 0; i < datac.size(); i++){
         //Compute the weights for each gaussian
         max = -INFINITY;
@@ -215,7 +213,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                 probabilitiesc[K*k+j] = std::exp(probabilitiesc[K*k+j]);
             }
         }
-        //Assign a convoluted gaussian
+        //Assign a Colvolved gaussian
         multinomial_1(r, probabilitiesc, choicec);
         //Save the identity
         //We do not compute the statistics because they will have to be updated since this dataset is used for sampling twice
@@ -229,10 +227,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Add the priors
     for (unsigned int k = 0; k < K; k++){
-        nminalpha[k] += alpha/K;
+        nminalpha[k] += priors[0];
     }    
     for (unsigned int k = 0; k < Kc; k++){
-        nminalphac[k] += alphac/Kc;
+        nminalphac[k] += priors[5];
     }    
 
     //Sample the new mixtures
@@ -252,10 +250,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Sample the variances
     //sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
-    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, theta, kconst);
+    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, priors[3], priors[4]);
     //Sample the means
     for (unsigned int j = 0; j < K; j++){
-        //Convoluted terms
+        //Colvolved terms
         for (unsigned int k = 0; k < Kc; k++){
             effsigma += n[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
             effmean += x[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
@@ -263,6 +261,9 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         //Autofluorescence terms
         effsigma += n[j][Kc]/(std::pow(sigmanew[j],2));
         effmean += x[j][Kc]/(std::pow(sigmanew[j],2));
+        //Add priors
+        effsigma += 1/std::pow(priors[2],2);
+        effmean += priors[1]/std::pow(priors[2],2);
         
         if (effsigma == 0){
             munew[j] = mu[j];
@@ -281,7 +282,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         effsigma = 0;
     }    
 
-    //Sample the convoluted variance and mean
+    //Sample the Colvolved variance and mean
     //Compute the statistics
     for (unsigned int i = 0; i < datac.size(); i++){
         for (unsigned int j = 0; j < K; j++){
@@ -294,7 +295,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Sample the variances
     //sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
-    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, theta, kconst);
+    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, priors[8], priors[9]);
     //Sample the means
     for (unsigned int k = 0; k < Kc; k++){
         for (unsigned int j = 0; j < K; j++){
@@ -302,6 +303,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             effsigma += nc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
             effmean += xc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
         }
+        //Add priors
+        effsigma += 1/std::pow(priors[7],2);
+        effmean += priors[6]/std::pow(priors[7],2);
+
         if (effsigma == 0){
             munewc[k] = muc[k];
         }else{
@@ -323,7 +328,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
 void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
                                 int ignored_iterations, int iterations, int nChains,
-                                int K, int Kc, double alpha, double alphac, double theta, double kconst, bool initialised, bool showProgress, int seed){
+                                int K, int Kc, std::vector<double>& priors, bool initialised, bool showProgress, int seed){
     //Variables for the random generation
     std::mt19937 r;
     r.seed(seed);
@@ -382,9 +387,9 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
     //Ignorable, steps
     for (int i = 0; i < ignored_iterations; i++){
         Gibbs_convolved_step(r, data, datac,
-                         pi, mu, sigma, pinew, munew, sigmanew, alpha,
-                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
-                         id, theta, kconst);
+                         pi, mu, sigma, pinew, munew, sigmanew,
+                         pic, muc, sigmac, pinewc, munewc, sigmanewc,
+                         id, priors);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
@@ -412,9 +417,9 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
     //Recorded steps
     for (unsigned int i = 0; i < iterations; i++){
         Gibbs_convolved_step(r, data, datac,
-                         pi, mu, sigma, pinew, munew, sigmanew, alpha,
-                         pic, muc, sigmac, pinewc, munewc, sigmanewc, alphac,
-                         id, theta, kconst);
+                         pi, mu, sigma, pinew, munew, sigmanew,
+                         pic, muc, sigmac, pinewc, munewc, sigmanewc,
+                         id, priors);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
@@ -449,9 +454,10 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     return;
 }
+
 std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
                           int ignored_iterations, int iterations, int nChains,
-                          int K, int Kc, double alpha, double alphac, double theta, double kconst, std::vector<std::vector<double>> initial_conditions, bool showProgress, int seed){
+                          int K, int Kc, std::vector<double>& priors, std::vector<std::vector<double>>& initial_conditions, bool showProgress, int seed){
 
     //Variable to check if initialised
     bool initialised = false;
@@ -492,7 +498,7 @@ std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<dou
         int seedchain = seed+i;
         chains.push_back(std::thread(chain, a, std::ref(posterior), std::ref(data), std::ref(datac),                          
                                 ignored_iterations, iterations, nChains,
-                                K, Kc, alpha, alphac, theta, kconst,
+                                K, Kc, std::ref(priors),
                                 initialised, showProgress, seedchain)); //Need explicit by reference std::refs
     }
     //Wait for rejoining
