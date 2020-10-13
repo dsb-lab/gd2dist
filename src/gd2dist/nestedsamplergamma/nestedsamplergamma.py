@@ -170,7 +170,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
 
         if self.fitted:
             pickling_on = open(name+".pickle","wb")
-            pk.dump({"K":self.K, "Kc":self.Kc, "weights":self.results["logwt"], "samples":self.results["samples"], "evidence":self.results["evidence"]}, pickling_on)
+            pk.dump({"K":self.K, "Kc":self.Kc, "weights":self.results["logwt"], "samples":self.results["samples"], "evidence":self.results["evidence"], "bias":self.bias}, pickling_on)
             pickling_on.close()
         else:
             print("The model has not been fitted so there is nothing to save.")
@@ -197,6 +197,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
         self.results["logwt"] = aux["weights"]
         self.results["samples"] = aux["samples"]
         self.results["evidence"] = aux["evidence"]
+        self.bias = aux["bias"]
         
         self.prune()
 
@@ -219,13 +220,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = self.bias))
+            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = 0))+self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = 0))+self.bias
             else:
-                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = 0))+self.bias
 
         return
 
@@ -244,13 +245,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = self.bias))
+            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = 0))+self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = 0))+self.bias
             else:
-                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = 0))+self.bias
 
         return
 
@@ -269,13 +270,13 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
 
         if style=="full":
-            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = self.bias))
+            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size, bias = 0))+2*self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples)), p=self.weights) 
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = 0))+2*self.bias
             else:
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = self.bias))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,weights=self.weights,size=size,pos=pos, bias = 0))+2*self.bias
 
         return
 
@@ -293,7 +294,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_autofluorescence_gamma(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = self.bias))
+        return  np.array(score_autofluorescence_gamma(self.samples, x-self.bias, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = 0))
 
     def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -309,7 +310,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_deconvolution_gamma(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = self.bias))
+        return  np.array(score_deconvolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = 0))
 
     def score_convolution(self, x, percentiles = [0.05, 0.95], size = 500):
         """
@@ -325,4 +326,4 @@ class nestedsamplergamma(gdposteriormodelgamma):
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution_gamma(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = self.bias))
+        return  np.array(score_convolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = 0))

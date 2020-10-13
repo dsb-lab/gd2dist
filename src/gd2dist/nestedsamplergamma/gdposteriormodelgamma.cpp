@@ -28,7 +28,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         max = -INFINITY;
 //        pybind11::print(dataNoise.size());
         for(int j = 0; j < K; j++){
-            exponent[j] = gamma_pdf(dataNoise[i],parameters[K+j],parameters[2*K+j],bias);
+            exponent[j] = gamma_pdf(dataNoise[i]-bias,parameters[K+j],parameters[2*K+j],0);
             
             if (exponent[j] > max){
                 max = exponent[j];
@@ -47,7 +47,7 @@ double gdposteriormodelgamma::logLikelihood(std::vector<double>& parameters){
         max = -INFINITY;
         for(int j = 0; j < K; j++){
             for(int k = 0; k < Kc; k++){
-                exponent[j*Kc+k] = gamma_sum_pdf(dataConvolution[i],parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],bias,precission);
+                exponent[j*Kc+k] = gamma_sum_pdf(dataConvolution[i]-2*bias,parameters[K+j],parameters[2*K+j],parameters[3*K+Kc+k],parameters[3*K+2*Kc+k],0,precission);
                 if (exponent[j*Kc+k] > max){
                     max = exponent[j*Kc+k];
                 }
