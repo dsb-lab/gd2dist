@@ -63,7 +63,7 @@ double effective_gamma_not_normalized(double pos, std::vector<double> n, std::ve
 void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
                              std::vector<std::vector<double>> &x2, 
                              std::vector<double> &sigma, std::vector<double> &sigmaold, std::vector<double> &sigmanew,
-                             double theta, double kconst){
+                             double theta, double kconst, std::vector<double> &slice_step){
 
         int N = sigmanew.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -81,6 +81,8 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
         for (int i = 0; i < N; i++){
 
             old = sigmaold[i];
+            expansion = slice_step[i];
+
             for (int j = 0; j < 10; j++){
                 loss_old = effective_gamma_not_normalized(old, n[i], x2[i], sigma, theta, kconst);
                 //Chose new height
@@ -106,6 +108,7 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
                     loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
                     counter++;
                 }
+                slice_step[i] = (max-min)/10;
 
                 //Sample
                 counter = 0;
@@ -139,7 +142,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                           std::vector<double> & pic, std::vector<double> & muc, std::vector<double> & sigmac,
                           std::vector<double> & pinewc, std::vector<double> & munewc, std::vector<double> & sigmanewc,
                           std::vector<std::vector<std::vector<double>>>& id,
-                          std::vector<double>& priors){
+                          std::vector<double>& priors, std::vector<double>& slice_step_sigma, std::vector<double>& slice_step_sigmac){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -250,7 +253,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Sample the variances
     //sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
-    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, priors[3], priors[4]);
+    slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, priors[3], priors[4], slice_step_sigma);
     //Sample the means
     for (unsigned int j = 0; j < K; j++){
         //Colvolved terms
@@ -295,7 +298,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     //Sample the variances
     //sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
-    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, priors[8], priors[9]);
+    slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, priors[8], priors[9], slice_step_sigmac);
     //Sample the means
     for (unsigned int k = 0; k < Kc; k++){
         for (unsigned int j = 0; j < K; j++){
@@ -338,6 +341,9 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
     std::vector<double> pic(Kc), muc(Kc), sigmac(Kc), pinewc(Kc), munewc(Kc), sigmanewc(Kc);
 
     std::vector<std::vector<std::vector<double>>> id(Kc,std::vector<std::vector<double>>(K,std::vector<double>(datac.size())));
+
+    std::vector<double> slice_step_sigma(K,0.5);
+    std::vector<double> slice_step_sigmac(Kc,0.5);
 
     double var = 0, varc = 0, mean = 0, meanc = 0;
     //Compute statistics
@@ -389,7 +395,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         Gibbs_convolved_step(r, data, datac,
                          pi, mu, sigma, pinew, munew, sigmanew,
                          pic, muc, sigmac, pinewc, munewc, sigmanewc,
-                         id, priors);
+                         id, priors, slice_step_sigma, slice_step_sigmac);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
@@ -419,7 +425,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         Gibbs_convolved_step(r, data, datac,
                          pi, mu, sigma, pinew, munew, sigmanew,
                          pic, muc, sigmac, pinewc, munewc, sigmanewc,
-                         id, priors);
+                         id, priors, slice_step_sigma, slice_step_sigmac);
         pi = pinew;
         mu = munew;
         sigma = sigmanew;

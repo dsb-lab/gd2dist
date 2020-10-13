@@ -27,10 +27,11 @@ class nestedsamplernorm(gdposteriormodelnorm):
         """
         gdposteriormodelnorm.__init__(self,[],[],K,Kc)
         self.fitted = False
+        self.priors = []
 
         return
 
-    def fit(self, dataNoise, dataConvolution, **kwargs):
+    def fit(self, dataNoise, dataConvolution, prior_method = "uniform", priors = None, **kwargs):
         """
         Fit the model to the posterior distribution
 
@@ -49,8 +50,6 @@ class nestedsamplernorm(gdposteriormodelnorm):
         """
         self.data = dataNoise
         self.datac = dataConvolution
-        self.dataMin = np.min([dataNoise,dataConvolution])
-        self.dataMax = np.max([dataNoise,dataConvolution])
 
         #separate kargs for the two different samplers functions
         #nested sampler function
@@ -64,7 +63,45 @@ class nestedsamplernorm(gdposteriormodelnorm):
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
         gdposteriormodelnorm.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
-        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+
+        if prior_method == "vague":
+            if priors == None and self.priors == []:
+                m = np.min(dataNoise)
+                M = np.max(dataNoise) 
+                m2 = np.min(dataConvolution)
+                M2 = np.max(dataConvolution) 
+                self.priors = [(M+m)/2,
+                                5*(M-m)**0.5,
+                                3*(M-m)**0.5,
+                                1.1,
+                                (M2+m2)/2,
+                                5*(M2-m2)**0.5,
+                                3*(M2-m2)**0.5,
+                                1.1]
+            elif self.priors == []:
+                self.priors = priors
+
+            dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+
+        elif prior_method == "uniform":
+            if priors == None and self.priors == []:
+                m = np.min(dataNoise)
+                M = np.max(dataNoise) 
+                m2 = np.min(dataConvolution)
+                M2 = np.max(dataConvolution) 
+                self.priors = [m,
+                                M,
+                                0,
+                                (M-m),
+                                m2,
+                                M2,
+                                0,
+                                (M2-m2)]
+            elif self.priors == []:
+                self.priors = priors
+
+            dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior_uniform, 3*self.K+3*self.Kc, **nestedsampler_dict)
+
         dynestyModel.run_nested(**run_nested_dict)
         self.results = {}
         self.results["samples"] = dynestyModel.results["samples"]

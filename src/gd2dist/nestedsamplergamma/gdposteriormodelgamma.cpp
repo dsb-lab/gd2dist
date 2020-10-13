@@ -85,11 +85,11 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < K; i++){
-        transformed[K+i] = priortheta_theta*boost::math::gamma_p_inv(priortheta_k,uniform[K+i]);
+        transformed[K+i] = priors[0]*boost::math::gamma_p_inv(priors[1],uniform[K+i]);
     }
     //Std
     for(int i = 0; i < K; i++){
-        transformed[2*K+i] = priork_theta*boost::math::gamma_p_inv(priork_k,uniform[2*K+i]);
+        transformed[2*K+i] = priors[2]*boost::math::gamma_p_inv(priors[3],uniform[2*K+i]);
     }
 
     //Uniform sphere
@@ -103,11 +103,54 @@ std::vector<double> gdposteriormodelgamma::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+Kc+i] = priortheta_thetac*boost::math::gamma_p_inv(priortheta_kc,uniform[3*K+Kc+i]);
+        transformed[3*K+Kc+i] = priors[4]*boost::math::gamma_p_inv(priors[5],uniform[3*K+Kc+i]);
     }
     //Std
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+2*Kc+i] = priork_thetac*boost::math::gamma_p_inv(priork_kc,uniform[3*K+2*Kc+i]);
+        transformed[3*K+2*Kc+i] = priors[6]*boost::math::gamma_p_inv(priors[7],uniform[3*K+2*Kc+i]);
+    }
+
+    return transformed;
+}
+
+std::vector<double> gdposteriormodelgamma::prior_uniform(std::vector<double>& uniform){
+
+    std::vector<double> transformed(3*K+3*Kc,0);
+
+    double total = 0;
+    //Uniform sphere
+    for(int i = 0; i < K; i++){
+        transformed[i] = boost::math::erf_inv(uniform[i]);
+        total += transformed[i];
+    }
+    for(int i = 0; i < K; i++){
+        transformed[i] /= total;
+    }
+    //Mean
+    for(int i = 0; i < K; i++){
+        transformed[K+i] = (priors[1]-priors[0])*uniform[K+i]+priors[0];
+    }
+    //Std
+    for(int i = 0; i < K; i++){
+        transformed[2*K+i] = (priors[3]-priors[2])*uniform[2*K+i]+priors[2];
+    }
+
+    //Uniform sphere
+    total = 0;
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+i] = boost::math::erf_inv(uniform[3*K+i]);;
+        total += transformed[3*K+i];
+    }
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+i] /= total;
+    }
+    //Mean
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+Kc+i] = (priors[5]-priors[4])*uniform[3*K+Kc+i]+priors[4];
+    }
+    //Std
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+2*Kc+i] = (priors[7]-priors[6])*uniform[3*K+2*Kc+i]+priors[6];
     }
 
     return transformed;

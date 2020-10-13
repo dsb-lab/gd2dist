@@ -18,11 +18,11 @@ PYBIND11_MODULE(gdposteriormodelnorm, m) {
         .def(py::init<std::vector<double>, std::vector<double>, int, int>())
         .def("logLikelihood", &gdposteriormodelnorm::logLikelihood)
         .def("prior", &gdposteriormodelnorm::prior)
+        .def("prior_uniform", &gdposteriormodelnorm::prior_uniform)
         .def_readwrite("K", &gdposteriormodelnorm::K)
         .def_readwrite("Kc", &gdposteriormodelnorm::Kc)
         .def_readwrite("data", &gdposteriormodelnorm::dataNoise)
         .def_readwrite("datac", &gdposteriormodelnorm::dataConvolution)
-        .def_readwrite("dataMin", &gdposteriormodelnorm::dataMin)
-        .def_readwrite("dataMax", &gdposteriormodelnorm::dataMax)
+        .def_readwrite("priors", &gdposteriormodelnorm::priors)
         ;
 }

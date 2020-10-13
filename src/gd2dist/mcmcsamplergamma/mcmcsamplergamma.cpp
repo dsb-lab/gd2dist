@@ -255,7 +255,7 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                             std::vector<double> &thetanew,
                             double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
                             double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission, std::string method){
+                            double bias, double precission, std::string method, std::vector<double> & slice){
 
         int N = theta.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -273,6 +273,7 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
         for (int i = 0; i < N; i++){
 
             old = theta[i];
+            expansion = slice[i];
             for (int j = 0; j < 10; j++){
                 loss_old = gamma_pdf_full_batch(old, kconst[i], thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, method,
@@ -313,6 +314,8 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                             priork_k, priork_theta);
                     count++;
                 }
+
+                slice[i] = (max-min)/10.0;
 
                 //Sample
                 count = 0;
@@ -435,7 +438,7 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
                             std::vector<double> &kconstnew,
                             double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
                             double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission, std::string method){
+                            double bias, double precission, std::string method, std::vector<double> & slice){
 
         int N = theta.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -453,6 +456,7 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
         for (int i = 0; i < N; i++){
 
             old = kconst[i];
+            expansion = slice[i];
             for (int j = 0; j < 10; j++){
                 loss_old = gamma_pdf_full_batch(theta[i], old, thetac, kconstc, bias,
                             priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, method,
@@ -488,6 +492,8 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
                             x[i], xlog[i], n[i], xc[i], xlogc[i], nc[i], priortheta_k, priortheta_theta, priork_k, priork_theta);
                     count++;
                 }
+
+                slice[i] = (max-min)/10.0;
 
                 //Sample
                 count = 0;
@@ -620,7 +626,7 @@ void slice_thetac(std::mt19937 & r,
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                 std::vector<double> &thetanewc,
                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                double bias, double precission, std::string method){
+                double bias, double precission, std::string method, std::vector<double> & slice){
 
         int N = thetac.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -638,6 +644,7 @@ void slice_thetac(std::mt19937 & r,
         for (int i = 0; i < N; i++){
 
             old = thetac[i];
+            expansion = slice[i];
             for (int j = 0; j < 10; j++){
                 loss_old = gamma_pdf_full_batch(xc, xlogc, nc, theta, kconst, old, kconstc[i],
                             bias,
@@ -683,6 +690,8 @@ void slice_thetac(std::mt19937 & r,
                             i);
                     count++;
                 }
+
+                slice[i] = (max-min)/10.0;
 
                 //Sample
                 count = 0;
@@ -817,7 +826,7 @@ void slice_kc(std::mt19937 &r,
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                 std::vector<double> &kconstnewc,
                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                double bias, double precission, std::string method){
+                double bias, double precission, std::string method, std::vector<double> & slice){
 
         int N = thetac.size();
         std::uniform_real_distribution<double> uniform(0,1);
@@ -835,6 +844,7 @@ void slice_kc(std::mt19937 &r,
         for (int i = 0; i < N; i++){
 
             old = kconstc[i];
+            expansion = slice[i];
             for (int j = 0; j < 10; j++){
                 loss_old = gamma_pdf_full_batch(xc, xlogc, nc, theta, kconst, thetac[i], old,
                             bias,
@@ -881,6 +891,8 @@ void slice_kc(std::mt19937 &r,
                     count++;
                 }
 
+                slice[i] = (max-min)/10.0;
+
                 //Sample
                 count = 0;
                 do{
@@ -911,7 +923,7 @@ void slice_kc(std::mt19937 &r,
     return;
 }
 
-void slice_bias(std::mt19937 &r, 
+/*void slice_bias(std::mt19937 &r, 
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                 std::vector<double> &data, std::vector<double> &datac, 
                 std::vector<std::vector<int>> &id, std::vector<int> &counter,
@@ -1008,9 +1020,9 @@ void slice_bias(std::mt19937 &r,
         }
 
     return;
-}
+}*/
 
-void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
+/*void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
                     std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
                     std::vector<double> & pinew, std::vector<double> & thetanew, std::vector<double> & kconstnew, 
                     double alpha, double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
@@ -1127,10 +1139,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
     //Sample autofluorescence
     //Sample the thetas
-    /*slice_theta(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, datac, idc, counterc,
+    slice_theta(r, n, x, xlog, theta, kconst, thetac, kconstc, thetanew, datac, idc, counterc,
                 priortheta_k, priortheta_theta, priork_k, priork_theta,
                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
-                bias, precission, method);*/
+                bias, precission, method);
     //Sample the kconst
     slice_k(r, n, x, xlog, theta, kconst, thetac, kconstc, kconstnew, datac, idc, counterc,
                 priortheta_k, priortheta_theta, priork_k, priork_theta,
@@ -1143,15 +1155,15 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
     //Sample the convolution
     //Sample the thetas
-    /*slice_thetac(r, theta, kconst, thetac, kconstc, thetanewc, datac, idc, counterc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
+    slice_thetac(r, theta, kconst, thetac, kconstc, thetanewc, datac, idc, counterc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
     //Sample the kconst
     slice_kc(r, theta, kconst, thetac, kconstc, kconstnewc, datac, idc, counterc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission);
 
     //Sample the bias
     slice_bias(r,theta, kconst, thetac, kconstc, data, datac, id, counter, idc, counterc, bias, biasnew, priorbias_sigma, precission);
-    */
+    
     return;
-}
+}*/
 
 void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
                     std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
@@ -1161,7 +1173,9 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                     std::vector<double> & pinewc, std::vector<double> & thetanewc, std::vector<double> & kconstnewc, 
                     double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
                     double bias,
-                    double precission, std::string method){
+                    double precission, std::string method, 
+                    std::vector<double> & slice_step_theta, std::vector<double> & slice_step_k, 
+                    std::vector<double> & slice_step_thetac, std::vector<double> & slice_step_kc){
 
     //Step of the convolution
     unsigned int K = pi.size();
@@ -1271,20 +1285,24 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     slice_theta(r, n, x, xlog, nc, xc, xlogc, theta, kconst, thetac, kconstc, thetanew,
                 priortheta_k, priortheta_theta, priork_k, priork_theta,
                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
-                bias, precission, method);
+                bias, precission, method, slice_step_theta);
 
     //Sample the kconst
     slice_k(r, n, x, xlog, nc, xc, xlogc, thetanew, kconst, thetac, kconstc, kconstnew,
                 priortheta_k, priortheta_theta, priork_k, priork_theta,
                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
-                bias, precission, method);
+                bias, precission, method, slice_step_k);
 
     //Sample the convolution
     //Sample the thetas
-    slice_thetac(r, xc, xlogc, nc, thetanew, kconstnew, thetac, kconstc, thetanewc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission, method);
+    slice_thetac(r, xc, xlogc, nc, thetanew, kconstnew, thetac, kconstc, thetanewc, 
+                priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission, method, 
+                slice_step_thetac);
 
     //Sample the kconst
-    slice_kc(r, xc, xlogc, nc, thetanew, kconstnew, thetanewc, kconstc, kconstnewc, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission, method);
+    slice_kc(r, xc, xlogc, nc, thetanew, kconstnew, thetanewc, kconstc, kconstnewc, 
+            priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, bias, precission, method,
+            slice_step_kc);
     
     return;
 }
@@ -1304,8 +1322,13 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     std::vector<double> pic(Kc), thetac(Kc), kconstc(Kc), pinewc(Kc), thetanewc(Kc), kconstnewc(Kc);
 
+    std::vector<double> slice_step_theta(K,0.5);
+    std::vector<double> slice_step_k(K,0.5);
+    std::vector<double> slice_step_thetac(Kc,0.5);
+    std::vector<double> slice_step_kc(Kc,0.5);
+
     if(method == "exact"){
-        std::vector<std::vector<std::vector<int>>> idc(K,std::vector<std::vector<int>>(Kc,std::vector<int>(datac.size(),0)));
+        /*std::vector<std::vector<std::vector<int>>> idc(K,std::vector<std::vector<int>>(Kc,std::vector<int>(datac.size(),0)));
         std::vector<std::vector<int>> id(K,std::vector<int>(datac.size(),0));
 
         //Initialise
@@ -1367,7 +1390,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                             pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
                             pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                             bias, 
-                            id, idc, precission,method);
+                            id, idc, precission, method, slice_step_theta, slice_step_k, slice_step_thetac, slice_step_kc);
             pi = pinew;
             theta = thetanew;
             kconst = kconstnew;
@@ -1398,7 +1421,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                             pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
                             pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                             bias,
-                            id, idc, precission,method);
+                            id, idc, precission, method, slice_theta, slice_k, slice_thetac, slice_kc);
             pi = pinew;
             theta = thetanew;
             kconst = kconstnew;
@@ -1429,7 +1452,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
             pybind11::gil_scoped_acquire acquire;
             pybind11::print("Chain",chainId," Recorded iterations: 100%");
             pybind11::gil_scoped_release release;
-        }
+        }*/
 
     }else if(method == "moments"){
 
@@ -1493,7 +1516,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                             pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
                             pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                             bias, 
-                            precission,method);
+                            precission,method, slice_step_theta, slice_step_k, slice_step_thetac, slice_step_kc);
             pi = pinew;
             theta = thetanew;
             kconst = kconstnew;
@@ -1502,6 +1525,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
             kconstc = kconstnewc;
 
             if(showProgress){
+
                 if(i % progressStep == 0){
                     pybind11::gil_scoped_acquire acquire;
                     pybind11::print("Chain", chainId, " Ignorable iterations: ", progressCounter * 10, "%");
@@ -1524,7 +1548,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                             pi, theta, kconst, pinew, thetanew, kconstnew, alpha, priortheta_k, priortheta_theta, priork_k, priork_theta,
                             pic, thetac, kconstc, pinewc, thetanewc, kconstnewc, alphac, priortheta_kc, priortheta_thetac, priork_kc, priork_thetac,
                             bias,
-                            precission,method);
+                            precission,method, slice_step_theta, slice_step_k, slice_step_thetac, slice_step_kc);
             pi = pinew;
             theta = thetanew;
             kconst = kconstnew;
@@ -1561,6 +1585,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     return;
 }
+
 std::vector<std::vector<double>> fit(std::vector<double> & data, std::vector<double>& datac,
                           int ignored_iterations, int iterations, int nChains,
                           int K, int Kc, 

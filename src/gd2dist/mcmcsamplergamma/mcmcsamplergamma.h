@@ -71,7 +71,7 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                             std::vector<double> &thetanew, std::vector<double> &datac,
                             double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
                             double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission, std::string method);
+                            double bias, double precission, std::string method, std::vector<double> & slice);
 
 void slice_k(std::mt19937 &r, std::vector<double> &n, std::vector<double> &x, std::vector<double> &xlog, 
                             std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
@@ -85,7 +85,7 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
                             std::vector<double> &kconstnew,
                             double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
                             double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                            double bias, double precission, std::string method);
+                            double bias, double precission, std::string method, std::vector<double> & slice);
 
 void slice_thetac(std::mt19937 &r, 
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
@@ -98,7 +98,7 @@ void slice_thetac(std::mt19937 & r,
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                 std::vector<double> &thetanewc,
                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                double bias, double precission, std::string method);
+                double bias, double precission, std::string method, std::vector<double> & slice);
 
 void slice_kc(std::mt19937 &r, 
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
@@ -111,7 +111,7 @@ void slice_kc(std::mt19937 &r,
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
                 std::vector<double> &kconstnewc,
                 double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
-                double bias, double precission, std::string method);
+                double bias, double precission, std::string method, std::vector<double> & slice);
 
 void slice_bias(std::mt19937 &r, 
                 std::vector<double> &theta, std::vector<double> &kconst, std::vector<double> &thetac, std::vector<double> &kconstc, 
@@ -120,7 +120,7 @@ void slice_bias(std::mt19937 &r,
                 std::vector<std::vector<std::vector<int>>> &idc, std::vector<std::vector<int>> &counterc,
                 double bias, double & biasnew, double priorbias_sigma, double precission, std::string method);
 
-void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
+/*void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
                     std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
                     std::vector<double> & pinew, std::vector<double> & thetanew, std::vector<double> & kconstnew, 
                     double alpha, double priortheta_k, double priortheta_theta, double priork_k, double priork_theta,
@@ -129,7 +129,9 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                     double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
                     double bias,
                     std::vector<std::vector<int>> id, std::vector<std::vector<std::vector<int>>> idc,
-                    double precission, std::string method);
+                    double precission, std::string method,
+                    std::vector<double> & slice_step_theta, std::vector<double> & slice_step_k, 
+                    std::vector<double> & slice_step_thetac, std::vector<double> & slice_step_kc);*/
 
 void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vector<double> & datac,
                     std::vector<double> & pi, std::vector<double> & theta, std::vector<double> & kconst, 
@@ -139,7 +141,9 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                     std::vector<double> & pinewc, std::vector<double> & thetanewc, std::vector<double> & kconstnewc, 
                     double alphac, double priortheta_kc, double priortheta_thetac, double priork_kc, double priork_thetac,
                     double bias,
-                    double precission, std::string method);
+                    double precission, std::string method,                    
+                    std::vector<double> & slice_step_theta, std::vector<double> & slice_step_k, 
+                    std::vector<double> & slice_step_thetac, std::vector<double> & slice_step_kc);
 
 void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<double> & data, std::vector<double> & datac,                          
                                 int ignored_iterations, int iterations, int nChains,
