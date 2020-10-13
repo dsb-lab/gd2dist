@@ -72,31 +72,33 @@ class mcmcsamplergamma:
                 self.bias = m - 0.01
             else:
                 self.bias = 0
+        elif bias < np.min([dataNoise,dataConvolution]):
+            self.bias = bias
         if priors==None:
             m = np.mean(dataNoise)
             v = np.var(dataNoise)
             self.priortheta_theta = 100*v/m
             self.priork_theta = 100*v/m
-            self.priortheta_k = 2
-            self.priork_k = 2
+            self.priortheta_k = 1.1
+            self.priork_k = 1.1
             m = np.mean(dataConvolution)
             v = np.var(dataConvolution)
             self.priortheta_thetac = 100*v/m
             self.priork_thetac = 100*v/m
-            self.priortheta_kc = 2
-            self.priork_kc = 2
+            self.priortheta_kc = 1.1
+            self.priork_kc = 1.1
 
 
         self.precission = precission
         self.method = method
 
-        self.samples = np.array(fit(dataNoise, dataConvolution,
+        self.samples = np.array(fit(dataNoise-self.bias, dataConvolution-2*self.bias,
                           self.ignored_iterations, self.iterations, self.chains,
                           self.K, self.Kc, 
                           self.alpha, self.alphac, 
                           self.priortheta_k, self.priortheta_theta, self.priork_k, self.priork_theta, 
                           self.priortheta_kc, self.priortheta_thetac, self.priork_kc, self.priork_thetac, 
-                          self.bias,
+                          0,
                           self.precission, self.method,
                           initial_conditions, show_progress, seed))
         
@@ -168,13 +170,13 @@ class mcmcsamplergamma:
         """
 
         if style=="full":
-            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size=size, bias=self.bias))
+            return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size=size, bias=0))+self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=self.bias))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+self.bias
             else:
-                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=self.bias))
+                return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+self.bias
 
 #        return  np.array(sample_autofluorescence_gamma(self.samples,self.K,self.Kc,size))
 
@@ -192,13 +194,13 @@ class mcmcsamplergamma:
         """
 
         if style=="full":
-            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size=size, bias=self.bias))
+            return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size=size, bias=0))+self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=self.bias))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+self.bias
             else:
-                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=self.bias))
+                return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+self.bias
 
 #        return  np.array(sample_deconvolution_gamma(self.samples,self.K,self.Kc,size))
 
@@ -216,13 +218,13 @@ class mcmcsamplergamma:
         """
 
         if style=="full":
-            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size, bias=self.bias))
+            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size, bias=0))+2*self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=self.bias))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+2*self.bias
             else:
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=self.bias))
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+2*self.bias
 
 #        return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size))
 
@@ -241,7 +243,7 @@ class mcmcsamplergamma:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_autofluorescence_gamma(self.samples, x, self.K, self.Kc, percentiles, size, self.bias))
+        return  np.array(score_autofluorescence_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles, size, 0))
 
     def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 100):
         """
@@ -258,7 +260,7 @@ class mcmcsamplergamma:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_deconvolution_gamma(self.samples, x, self.K, self.Kc, percentiles, size, self.bias))
+        return  np.array(score_deconvolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles, size, 0))
 
     def score_convolution(self, x, percentiles = [0.05, 0.95], size = 100):
         """
@@ -275,7 +277,7 @@ class mcmcsamplergamma:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution_gamma(self.samples, x, self.K, self.Kc, percentiles, size, self.bias))
+        return  np.array(score_convolution_gamma(self.samples, x-2*self.bias, self.K, self.Kc, percentiles, size, 0))
 
     def sampler_statistics(self, sort="weight"):
         """
