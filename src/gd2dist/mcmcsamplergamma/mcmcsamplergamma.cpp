@@ -336,7 +336,7 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                         count++;
                     }
 
-                    slice[i] = 0.5;//(max-min)/10.0;
+                    slice[i] = (max-min)/10.0;
 
                     //Sample
                     count = 0;
@@ -530,7 +530,7 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
                         count++;
                     }
 
-                    slice[i] = 0.5;//(max-min)/10.0;
+                    slice[i] = (max-min)/10.0;
                     if(min < 0){
                         pybind11::gil_scoped_acquire acquire;
                         pybind11::print(min);
@@ -747,7 +747,7 @@ void slice_thetac(std::mt19937 & r,
                         count++;
                     }
 
-                    slice[i] = 0.5;//(max-min)/10.0;
+                    slice[i] = (max-min)/10.0;
 
                     //Sample
                     count = 0;
@@ -963,7 +963,7 @@ void slice_kc(std::mt19937 &r,
                         count++;
                     }
 
-                    slice[i] = 0.5;//(max-min)/10.0;
+                    slice[i] = (max-min)/10.0;
 
                     //Sample
                     count = 0;
