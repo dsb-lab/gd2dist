@@ -3,6 +3,7 @@ from scipy.stats import norm
 import pandas as pd
 import numpy as np
 import pickle as pk
+from sklearn.cluster import KMeans
 
 from ..shared_functions import *
 
@@ -32,7 +33,7 @@ class mcmcsamplernorm:
 
         return
 
-    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, priors = None, initial_conditions = [], show_progress = True, seed = 0):
+    def fit(self, dataNoise, dataConvolution, iterations = 1000, ignored_iterations = 1000, chains = 1, priors = None, method_initialisation = "kmeans", initial_conditions = [], show_progress = True, seed = 0):
         """
         Fit the model to the posterior distribution
 
@@ -67,17 +68,60 @@ class mcmcsamplernorm:
             self.priors[1] = (np.max(dataNoise)+np.min(dataNoise))/2
             self.priors[2] = 3*(np.max(dataNoise)-np.min(dataNoise))
             self.priors[3] = 10*(np.max(dataNoise)-np.min(dataNoise))
-            self.priors[4] = 2
+            self.priors[4] = 1.1
 
             self.priors[5] = 1/self.Kc
             self.priors[6] = (np.max(dataConvolution)+np.min(dataConvolution))/2
             self.priors[7] = 3*(np.max(dataConvolution)-np.min(dataConvolution))
             self.priors[8] = 10*(np.max(dataConvolution)-np.min(dataConvolution))
-            self.priors[9] = 2
+            self.priors[9] = 1.1
         else:
             self.priors = priors
 
-        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.priors, initial_conditions, show_progress, seed))
+        if initial_conditions != []:
+            self.initial_conditions = initial_conditions
+        elif method_initialisation == "kmeans":
+            K =self.K
+            Kc = self.Kc
+            y = np.zeros([chains,(K+Kc)*3])
+            model = KMeans(n_clusters=K)
+            model.fit(dataNoise.reshape(-1,1))
+            ids = model.predict(dataNoise.reshape(-1,1))
+            #Add weights autofluorescence
+            for i in range(K):
+                for j in range(chains):
+                    y[j,i] = np.sum(ids==i)/len(ids)
+            #Add means autofluorescence
+            for i in range(K):
+                for j in range(chains):
+                    y[j,K+i] = np.mean(dataNoise[ids==i])
+            #Add std autofluorescence
+            for i in range(K):
+                for j in range(chains):
+                    y[j,2*K+i] = np.std(dataNoise[ids==i])
+                        
+            model = KMeans(n_clusters=Kc)
+            model.fit(dataConvolution.reshape(-1,1))
+            ids = model.predict(dataConvolution.reshape(-1,1))
+            #Add weights autofluorescence
+            for i in range(Kc):
+                for j in range(chains):
+                    y[j,3*K+i] = np.sum(ids==i)/len(ids)
+            #Add means autofluorescence
+            for i in range(Kc):
+                for j in range(chains):
+                    y[j,3*K+Kc+i] = np.mean(dataConvolution[ids==i])
+            #Add std autofluorescence
+            for i in range(Kc):
+                for j in range(chains):
+                    y[j,3*K+2*Kc+i] = np.std(dataConvolution[ids==i])
+            self.initial_conditions = y
+        elif method_initialisation == "random":
+            self.initial_conditions = []
+        else: 
+            self.initial_conditions = []
+
+        self.samples = np.array(fit(dataNoise, dataConvolution, ignored_iterations, iterations, chains, self.K, self.Kc, self.priors, self.initial_conditions, show_progress, seed))
         
         self.fitted = True
 

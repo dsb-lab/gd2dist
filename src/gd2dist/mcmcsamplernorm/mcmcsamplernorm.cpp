@@ -22,15 +22,15 @@
 
     max = -INFINITY;
     for (int i = 0; i < data.size(); i++){
-        for (unsigned int j = 0; j < pi.size(); j++){
+        for (int j = 0; j < pi.size(); j++){
             log += std::log(pi[j])
                 +gaussian_pdf(data[i],mu[j],sigma[j]);
         }
     }
 
     for (int i = 0; i < datac.size(); i++){
-        for (unsigned int j = 0; j < pi.size(); j++){
-            for (unsigned int k = 0; k < pic.size(); k++){
+        for (int j = 0; j < pi.size(); j++){
+            for (int k = 0; k < pic.size(); k++){
                 log += std::log(pic[k])+std::log(pi[j])
                                     +gaussian_pdf(datac[i],mu[j]+muc[k],std::sqrt(std::pow(sigmac[k],2)+std::pow(sigma[j],2)));
             }
@@ -55,7 +55,7 @@ double effective_gamma_not_normalized(double pos, std::vector<double> n, std::ve
                 -x2[l]/(2*(std::pow(pos,2)));          
     }
     //Add prior
-    aux += -std::pow(pos,2)/theta+(kconst-1)*std::log(std::pow(pos,2));
+    aux += -pos/theta+(kconst-1)*std::log(pos);
 
     return aux;
 }
@@ -76,61 +76,74 @@ void slice_effective_gamma(std::mt19937 &r, std::vector<std::vector<double>> &n,
         double expansion = 0.5;
         int counter;
         double old;
+        int contribution;
 
         //Slice sampling
         for (int i = 0; i < N; i++){
 
-            old = sigmaold[i];
-            expansion = slice_step[i];
+            contribution = 0;
+            for(int j = 0; j < n[i].size(); j++){
+                contribution += n[i][j];
+            }
+            if( contribution > 0){
+                old = sigmaold[i];
+                expansion = slice_step[i];
 
-            for (int j = 0; j < 10; j++){
-                loss_old = effective_gamma_not_normalized(old, n[i], x2[i], sigma, theta, kconst);
-                //Chose new height
-                loss_old += std::log(uniform(r));
-                //Expand
-                min = old-expansion;
-                loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
-                counter = 0;
-                while(loss_new > loss_old && counter < 200000){
-                    min -= expansion;
+                for (int j = 0; j < 10; j++){
+                    loss_old = effective_gamma_not_normalized(old, n[i], x2[i], sigma, theta, kconst);
+                    //Chose new height
+                    loss_old += std::log(uniform(r));
+                    //Expand
+                    min = old-expansion;
+                    loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
+                    counter = 0;
                     if(min <= 0){
-                        min = 0.01;
+                        min = 0;
                         break;
                     }
-                    loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
-                    counter++;
-                }
-                max = old+expansion;
-                loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
-                counter = 0;
-                while(loss_new > loss_old && counter < 200000){
-                    max += expansion;
-                    loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
-                    counter++;
-                }
-                slice_step[i] = (max-min)/10;
-
-                //Sample
-                counter = 0;
-                do{
-                    newsigma = (max-min)*uniform(r)+min;
-                    loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma, theta, kconst);
-                    //Adapt boundaries
-                    if(loss_new < loss_old){
-                        if(newsigma < old){
-                            min = newsigma;
+                    while(loss_new > loss_old && counter < 200000){
+                        min -= expansion;
+                        if(min <= 0){
+                            min = 0;
+                            break;
                         }
-                        else if(newsigma > old){
-                            max = newsigma;
-                        }
+                        loss_new = effective_gamma_not_normalized(min, n[i], x2[i], sigma, theta, kconst);
+                        counter++;
                     }
-                    counter++;
-                }while(loss_new < loss_old && counter < 200000);
+                    max = old+expansion;
+                    loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
+                    counter = 0;
+                    while(loss_new > loss_old && counter < 200000){
+                        max += expansion;
+                        loss_new = effective_gamma_not_normalized(max, n[i], x2[i], sigma, theta, kconst);
+                        counter++;
+                    }
+                    slice_step[i] = (max-min)/10;
 
-                old = newsigma;
+                    //Sample
+                    counter = 0;
+                    do{
+                        newsigma = (max-min)*uniform(r)+min;
+                        loss_new = effective_gamma_not_normalized(newsigma, n[i], x2[i], sigma, theta, kconst);
+                        //Adapt boundaries
+                        if(loss_new < loss_old){
+                            if(newsigma < old){
+                                min = newsigma;
+                            }
+                            else if(newsigma > old){
+                                max = newsigma;
+                            }
+                        }
+                        counter++;
+                    }while(loss_new < loss_old && counter < 200000);
+
+                    old = newsigma;
+                }
+
+                sigmanew[i] = newsigma;
+            }else{
+                sigmanew[i] = sigma[i];
             }
-
-            sigmanew[i] = newsigma;
         }
 
     return;
@@ -145,8 +158,8 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
                           std::vector<double>& priors, std::vector<double>& slice_step_sigma, std::vector<double>& slice_step_sigmac){
 
     //Step of the convolution
-    unsigned int K = pi.size();
-    unsigned int Kc = pic.size();
+    int K = pi.size();
+    int Kc = pic.size();
     int size = K*Kc;
     std::vector<double> probabilities(K,0);    //Auxiliar vector for the weights of z
     std::vector<double> probabilitiesc(size,0);   //Auxiliar vector for the weights of zc
@@ -169,10 +182,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     double max;
 
     //Evaluate the autofluorescence data
-    for (unsigned int i = 0; i < data.size(); i++){
+    for (int i = 0; i < data.size(); i++){
         //Compute the weights for each gaussian
         max = -INFINITY;
-        for (unsigned int j = 0; j < K; j++){
+        for (int j = 0; j < K; j++){
             probabilities[j] = std::log(pi[j])
                                 +gaussian_pdf(data[i],mu[j],sigma[j]);
             if (probabilities[j] > max){
@@ -180,7 +193,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             }
         }
         //Normalize
-        for (unsigned int j = 0; j < K; j++){
+        for (int j = 0; j < K; j++){
             probabilities[j] -= max;
             probabilities[j] = std::exp(probabilities[j]);
         }
@@ -188,7 +201,7 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         multinomial_1(r, probabilities, choice);
         //Compute the basic statistics
         //We compute all the statistics already since we are going to use them only for the autofluorescence sampling
-        for (unsigned int j = 0; j < K; j++){
+        for (int j = 0; j < K; j++){
             n[j][Kc] += choice[j];
             x[j][Kc] += choice[j]*data[i];
             x2[j][Kc] += choice[j]*std::pow(data[i]-mu[j],2);
@@ -197,11 +210,11 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     }
     
     //Evaluate the Colvolved data
-    for (unsigned int i = 0; i < datac.size(); i++){
+    for (int i = 0; i < datac.size(); i++){
         //Compute the weights for each gaussian
         max = -INFINITY;
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
+        for (int j = 0; j < K; j++){
+            for (int k = 0; k < Kc; k++){
                 probabilitiesc[K*k+j] = std::log(pic[k])+std::log(pi[j])
                                     +gaussian_pdf(datac[i],mu[j]+muc[k],std::sqrt(std::pow(sigmac[k],2)+std::pow(sigma[j],2)));
                 if (probabilitiesc[K*k+j]>max){
@@ -210,8 +223,8 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             }
         }
         //Normalize
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
+        for (int j = 0; j < K; j++){
+            for (int k = 0; k < Kc; k++){
                 probabilitiesc[K*k+j] -= max;
                 probabilitiesc[K*k+j] = std::exp(probabilitiesc[K*k+j]);
             }
@@ -220,8 +233,8 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         multinomial_1(r, probabilitiesc, choicec);
         //Save the identity
         //We do not compute the statistics because they will have to be updated since this dataset is used for sampling twice
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
+        for (int j = 0; j < K; j++){
+            for (int k = 0; k < Kc; k++){
                 id[k][j][i] = choicec[K*k+j];
                 nminalpha[j] += choicec[K*k+j];
                 nminalphac[k] += choicec[K*k+j];
@@ -229,12 +242,12 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
         }
     }
     //Add the priors
-    for (unsigned int k = 0; k < K; k++){
+    /*for (int k = 0; k < K; k++){
         nminalpha[k] += priors[0];
     }    
-    for (unsigned int k = 0; k < Kc; k++){
+    for (int k = 0; k < Kc; k++){
         nminalphac[k] += priors[5];
-    }    
+    }    */
 
     //Sample the new mixtures
     dirichlet(r, nminalpha, pinew);
@@ -242,9 +255,9 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
 
     //Sample the autofluorescence variance and mean
     //Compute the statistics
-    for (unsigned int i = 0; i < datac.size(); i++){
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
+    for (int i = 0; i < datac.size(); i++){
+        for (int j = 0; j < K; j++){
+            for (int k = 0; k < Kc; k++){
                 n[j][k] += id[k][j][i];
                 x[j][k] += id[k][j][i]*(datac[i]-muc[k]);
                 x2[j][k] += id[k][j][i]*std::pow(datac[i]-mu[j]-muc[k],2);
@@ -255,9 +268,12 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     //sample_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, sigmaWidth);
     slice_effective_gamma(r, n, x2, sigmac, sigma, sigmanew, priors[3], priors[4], slice_step_sigma);
     //Sample the means
-    for (unsigned int j = 0; j < K; j++){
+    for (int j = 0; j < K; j++){
+        //Clean variables
+        effmean = 0;
+        effsigma = 0;
         //Colvolved terms
-        for (unsigned int k = 0; k < Kc; k++){
+        for (int k = 0; k < Kc; k++){
             effsigma += n[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
             effmean += x[j][k]/(std::pow(sigmac[k],2)+std::pow(sigmanew[j],2));
         }
@@ -275,21 +291,17 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             effsigma = 1/effsigma;
 
             if(std::isnan(effsigma)==false){
-                std::normal_distribution<double> gaussian(effmean, effsigma);
+                std::normal_distribution<double> gaussian(effmean, std::pow(effsigma,0.5));
                 munew[j] = gaussian(r);
             }
         }
-
-        //Clean variables
-        effmean = 0;
-        effsigma = 0;
     }    
 
     //Sample the Colvolved variance and mean
     //Compute the statistics
-    for (unsigned int i = 0; i < datac.size(); i++){
-        for (unsigned int j = 0; j < K; j++){
-            for (unsigned int k = 0; k < Kc; k++){
+    for (int i = 0; i < datac.size(); i++){
+        for (int j = 0; j < K; j++){
+            for (int k = 0; k < Kc; k++){
                 nc[k][j] += id[k][j][i];
                 xc[k][j] += id[k][j][i]*(datac[i]-munew[j]);
                 x2c[k][j] += id[k][j][i]*std::pow(datac[i]-munew[j]-muc[k],2);
@@ -300,8 +312,11 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
     //sample_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, sigmaWidth);
     slice_effective_gamma(r, nc, x2c, sigmanew, sigmac, sigmanewc, priors[8], priors[9], slice_step_sigmac);
     //Sample the means
-    for (unsigned int k = 0; k < Kc; k++){
-        for (unsigned int j = 0; j < K; j++){
+    for (int k = 0; k < Kc; k++){
+        //Clean variables
+        effmean = 0;
+        effsigma = 0;
+        for (int j = 0; j < K; j++){
             //I have to solve the problem of the sampling
             effsigma += nc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
             effmean += xc[k][j]/(std::pow(sigmanewc[k],2)+std::pow(sigmanew[j],2));
@@ -317,13 +332,10 @@ void Gibbs_convolved_step(std::mt19937 & r, std::vector<double> & data, std::vec
             effsigma = 1/effsigma;
 
             if(std::isnan(effsigma)==false){
-                std::normal_distribution<double> gaussian(effmean, effsigma);
+                std::normal_distribution<double> gaussian(effmean, std::pow(effsigma,0.5));
                 munewc[k] = gaussian(r);
             }
         }
-        //Clean variables
-        effmean = 0;
-        effsigma = 0;
     }    
 
     return;
@@ -361,14 +373,14 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
     }
     //Initialise
     if (!initialised){
-        std::normal_distribution<double> gaussian(mean,std::sqrt(varc));
+        std::normal_distribution<double> gaussian(mean,0.1*std::sqrt(var));
         for (int i = 0; i < K; i++){
             pi[i] = 1;
             mu[i] = gaussian(r);
             sigma[i] = std::sqrt(var)/10;
         }
 
-        std::normal_distribution<double> gaussianc(meanc-mean,std::sqrt(varc));
+        std::normal_distribution<double> gaussianc(meanc-mean,0.1*std::sqrt(varc));
         for (int i = 0; i < Kc; i++){
             pic[i] = 1;
             muc[i] = gaussianc(r);
@@ -420,8 +432,29 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
 
     progressStep = floor(iterations/10);
     progressCounter = 0;
+    int add = 0;
+    if(ignored_iterations == 0){
+        for (int j = 0; j < K; j++){
+            pinew[j]=posterior[pos0][j];
+            munew[j]=posterior[pos0][K+j];
+            sigmanew[j]=posterior[pos0][2*K+j];
+        }
+        pi = pinew;
+        mu = munew;
+        sigma = sigmanew;
+        for (int j = 0; j < Kc; j++){
+            pinewc[j]=posterior[pos0][3*K+j];
+            munewc[j]=posterior[pos0][3*K+Kc+j];
+            sigmanewc[j]=posterior[pos0][3*K+2*Kc+j];
+        }
+        pic = pinewc;
+        muc = munewc;
+        sigmac = sigmanewc;
+
+        add = 1;
+    }
     //Recorded steps
-    for (unsigned int i = 0; i < iterations; i++){
+    for (int i = add; i < iterations; i++){
         Gibbs_convolved_step(r, data, datac,
                          pi, mu, sigma, pinew, munew, sigmanew,
                          pic, muc, sigmac, pinewc, munewc, sigmanewc,
@@ -429,7 +462,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         pi = pinew;
         mu = munew;
         sigma = sigmanew;
-        for (unsigned int j = 0; j < K; j++){
+        for (int j = 0; j < K; j++){
             posterior[pos0+i][j] = pinew[j];
             posterior[pos0+i][K+j] = munew[j];
             posterior[pos0+i][2*K+j] = sigmanew[j];
@@ -437,7 +470,7 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
         pic = pinewc;
         muc = munewc;
         sigmac = sigmanewc;
-        for (unsigned int j = 0; j < Kc; j++){
+        for (int j = 0; j < Kc; j++){
             posterior[pos0+i][3*K+j] = pinewc[j];
             posterior[pos0+i][3*K+Kc+j] = munewc[j];
             posterior[pos0+i][3*K+2*Kc+j] = sigmanewc[j];
