@@ -2,7 +2,7 @@ import dynesty as dn
 from .gdposteriormodelgamma import gdposteriormodelgamma
 import numpy as np
 import inspect
-from scipy.stats import norm
+from scipy.stats import norm, gamma
 import pickle as pk
 
 from ..shared_functions import *
@@ -296,7 +296,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
         """
         yT = []
         for l in range(size):
-            i = np.random.choice(self.iterations,p=self.weights)
+            i = np.random.choice(len(self.weights),p=self.weights)
             y = np.zeros(len(x))
             for k in range(self.K):
                 thetastar = self.samples[i,self.K+k]
@@ -324,7 +324,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
 
         yT = []
         for l in range(size):
-            i = np.random.choice(self.iterations,p=self.weights)
+            i = np.random.choice(len(self.weights),p=self.weights)
             y = np.zeros(len(x))
             for j in range(self.Kc):
                 thetastar = self.samples[i,3*self.K+self.Kc+j]
@@ -352,7 +352,7 @@ class nestedsamplergamma(gdposteriormodelgamma):
 
         yT = []
         for l in range(size):
-            i = np.random.choice(self.iterations,p=self.weights)
+            i = np.random.choice(len(self.weights),p=self.weights)
             y = np.zeros(len(x))
             for j in range(self.Kc):
                 for k in range(self.K):

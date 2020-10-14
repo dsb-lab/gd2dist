@@ -287,7 +287,7 @@ class nestedsamplernorm(gdposteriormodelnorm):
         """
         yT = []
         for l in range(size):
-            i = np.random.choice(self.iterations,p=self.weights)
+            i = np.random.choice(len(self.weights),p=self.weights)
             y = np.zeros(len(x))
             for k in range(self.K):
                 mu = self.samples[i,self.K+k]
@@ -315,7 +315,7 @@ class nestedsamplernorm(gdposteriormodelnorm):
 
         yT = []
         for l in range(size):
-            i = np.random.choice(self.iterations,p=self.weights)
+            i = np.random.choice(len(self.weights),p=self.weights)
             y = np.zeros(len(x))
             for j in range(self.Kc):
                 mu = self.samples[i,3*self.K+self.Kc+j]
@@ -343,7 +343,7 @@ class nestedsamplernorm(gdposteriormodelnorm):
 
         yT = []
         for l in range(size):
-            i = np.random.choice(self.iterations,p=self.weights)
+            i = np.random.choice(len(self.weights),p=self.weights)
             y = np.zeros(len(x))
             for j in range(self.Kc):
                 for k in range(self.K):
