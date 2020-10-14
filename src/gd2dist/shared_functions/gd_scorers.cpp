@@ -296,7 +296,7 @@ double deconv_gamma_mixt_logpdf(double x, std::vector<double> parameters, int K,
 
     value = std::log(value)+max;
 
-    pybind11::print(value);
+    //pybind11::print(value);
 
     return value;
 }
