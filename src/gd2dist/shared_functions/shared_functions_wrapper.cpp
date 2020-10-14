@@ -151,7 +151,7 @@ PYBIND11_MODULE(shared_functions, m) {
      py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("size"));
 
 
-    m.def("score_deconvolution", 
+    /*m.def("score_deconvolution", 
     (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, std::vector<double>, int)) &score_deconvolution,
      "score the target from posterior",
      py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("weights"), py::arg("size"));
@@ -202,7 +202,7 @@ PYBIND11_MODULE(shared_functions, m) {
     m.def("score_convolution_gamma", 
     (std::vector<std::vector<double>> (*)(std::vector<std::vector<double>>&, std::vector<double>&, int, int, std::vector<double>, int, double)) &score_convolution_gamma,
      "score the convolution from posterior",
-     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("size"), py::arg("bias"));
+     py::arg("posterior"), py::arg("x"), py::arg("K"), py::arg("Kc"), py::arg("percentiles"), py::arg("size"), py::arg("bias"));*/
 
 
     //Wrappers mcmc statistics
