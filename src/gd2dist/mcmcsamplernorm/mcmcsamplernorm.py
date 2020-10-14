@@ -177,79 +177,7 @@ class mcmcsamplernorm:
 
         return
 
-    def sample_autofluorescence(self, size = 1, style = "full", pos = None):
-        """
-        Generate samples from the fitted posterior distribution according to the noise distribution
-
-        Parameters
-        -------------
-            size: int, number of samples to be drawn
-
-        Returns 
-        -------------
-            list: list, 1D array with *size* samples from the model
-        """
-
-        if style=="full":
-            return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size=size))
-        elif style=="single":
-            if pos == None:
-                pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size=size,pos=pos))
-            else:
-                return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size=size,pos=pos))
-
-        return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size))
-
-    def sample_deconvolution(self, size = 1, style = "full", pos = None):
-        """
-        Generate samples from the fitted posterior distribution according to the deconvolved distribution
-
-        Parameters
-        -------------
-            size: int, number of samples to be drawn
-
-        Returns
-        -------------
-            list: list, 1D array with *size* samples from the model
-        """
-
-        if style=="full":
-            return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size=size))
-        elif style=="single":
-            if pos == None:
-                pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size=size,pos=pos))
-            else:
-                return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size=size,pos=pos))
-
-        return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size))
-
-    def sample_convolution(self, size = 1, style = "full", pos = None):
-        """
-        Generate samples from the fitted posterior distribution according to the convolved distribution
-
-        Parameters
-        -------------
-            size: int, number of samples to be drawn
-
-        Returns
-        -------------
-            list: list, 1D array with *size* samples from the model
-        """
-
-        if style=="full":
-            return  np.array(sample_convolution(self.samples,self.K,self.Kc,size=size))
-        elif style=="single":
-            if pos == None:
-                pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_convolution(self.samples,self.K,self.Kc,size=size,pos=pos))
-            else:
-                return  np.array(sample_convolution(self.samples,self.K,self.Kc,size=size,pos=pos))
-
-        return  np.array(sample_convolution(self.samples,self.K,self.Kc,size))
-
-    def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 100):
+    def score_autofluorescence(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
 
@@ -263,10 +191,20 @@ class mcmcsamplernorm:
         -------------
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations)
+            y = np.zeros(len(x))
+            for k in range(self.K):
+                mu = self.samples[i,self.K+k]
+                sigma = self.samples[i,2*self.K+k]
+                    
+                y += self.samples[i,k]*norm.pdf(x,loc=mu,scale=sigma)
+            yT.append(y)
 
-        return  np.array(score_autofluorescence(self.samples, x, self.K, self.Kc, percentiles, size))
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
 
-    def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 100):
+    def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
 
@@ -281,9 +219,20 @@ class mcmcsamplernorm:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_deconvolution(self.samples, x, self.K, self.Kc, percentiles, size))
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                mu = self.samples[i,3*self.K+self.Kc+j]
+                sigma = self.samples[i,3*self.K+2*self.Kc+j]
+                    
+                y += self.samples[i,3*self.K+j]*norm.pdf(x,loc=mu,scale=sigma)
+            yT.append(y)
 
-    def score_convolution(self, x, percentiles = [0.05, 0.95], size = 100):
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+
+    def score_convolution(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
 
@@ -298,7 +247,24 @@ class mcmcsamplernorm:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution(self.samples, x, self.K, self.Kc, percentiles, size))
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                for k in range(self.K):
+                    mu1 = self.samples[i,self.K+k]
+                    mu2 = self.samples[i,3*self.K+self.Kc+j]
+                    sigma1 = self.samples[i,2*self.K+k]
+                    sigma2 = self.samples[i,3*self.K+2*self.Kc+j]
+                    mu = mu1
+                    s = np.sqrt(sigma1**2+sigma2**2)
+                    
+                    y += self.samples[i,k]*self.samples[i,3*self.K+j]*norm.pdf(x,loc=mu,scale=s)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+
 
     def sampler_statistics(self, sort="weight"):
         """

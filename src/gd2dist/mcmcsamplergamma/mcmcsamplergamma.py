@@ -1,5 +1,5 @@
 from .mcmcposteriorsamplergamma import fit
-from scipy.stats import norm
+from scipy.stats import norm, gamma
 import pandas as pd
 import numpy as np
 import pickle as pk
@@ -228,7 +228,7 @@ class mcmcsamplergamma:
 
 #        return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size))
 
-    def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 100):
+    def score_autofluorescence(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
 
@@ -242,10 +242,20 @@ class mcmcsamplergamma:
         -------------
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations)
+            y = np.zeros(len(x))
+            for k in range(self.K):
+                thetastar = self.samples[i,self.K+k]
+                kconststar = self.samples[i,2*self.K+k]
+                    
+                y += self.samples[i,k]*gamma.pdf(x,a=kconststar,scale=thetastar)
+            yT.append(y)
 
-        return  np.array(score_autofluorescence_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles, size, 0))
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
 
-    def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 100):
+    def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
 
@@ -260,9 +270,20 @@ class mcmcsamplergamma:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_deconvolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles, size, 0))
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                thetastar = self.samples[i,3*self.K+self.Kc+j]
+                kconststar = self.samples[i,3*self.K+2*self.Kc+j]
+                    
+                y += self.samples[i,3*self.K+j]*gamma.pdf(x,a=kconststar,scale=thetastar)
+            yT.append(y)
 
-    def score_convolution(self, x, percentiles = [0.05, 0.95], size = 100):
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+
+    def score_convolution(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
 
@@ -277,7 +298,25 @@ class mcmcsamplergamma:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles, size, 0))
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                for k in range(self.K):
+                    theta1 = self.samples[i,self.K+k]
+                    theta2 = self.samples[i,3*self.K+self.Kc+j]
+                    k1 = self.samples[i,2*self.K+k]
+                    k2 = self.samples[i,3*self.K+2*self.Kc+j]
+                    mu = theta1*k1+theta2*k2
+                    s = theta1*theta1*k1+theta2*theta2*k2
+                    thetastar = s/mu
+                    kconststar = mu*mu/s
+                    
+                    y += self.samples[i,k]*self.samples[i,3*self.K+j]*gamma.pdf(x,a=kconststar,scale=thetastar)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
 
     def sampler_statistics(self, sort="weight"):
         """

@@ -280,50 +280,92 @@ class nestedsamplergamma(gdposteriormodelgamma):
 
         return
 
-    def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 500):
-        """
-        Evaluate the mean and percentiles of the the pdf at certain position acording to the noise distribution
-
-        Parameters
-        --------------
-            x: list/array, positions where to evaluate the distribution
-            percentiles: list/array, percentiles to be evaluated
-            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
-
-        Returns:
-            list: list, 2D array with the mean and all the percentile evaluations at all points in x
-        """
-
-        return  np.array(score_autofluorescence_gamma(self.samples, x-self.bias, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = 0))
-
-    def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 500):
-        """
-        Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
-
-        Parameters
-        --------------
-            x: list/array, positions where to evaluate the distribution
-            percentiles: list/array, percentiles to be evaluated
-            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
-
-        Returns:
-            list: list, 2D array with the mean and all the percentile evaluations at all points in x
-        """
-
-        return  np.array(score_deconvolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = 0))
-
-    def score_convolution(self, x, percentiles = [0.05, 0.95], size = 500):
+    def score_autofluorescence(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
 
         Parameters
-        --------------
+        -------------
             x: list/array, positions where to evaluate the distribution
             percentiles: list/array, percentiles to be evaluated
             size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
 
-        Returns:
+        Returns
+        -------------
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations,p=self.weights)
+            y = np.zeros(len(x))
+            for k in range(self.K):
+                thetastar = self.samples[i,self.K+k]
+                kconststar = self.samples[i,2*self.K+k]
+                    
+                y += self.samples[i,k]*gamma.pdf(x,a=kconststar,scale=thetastar)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+
+    def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
+
+        Parameters
+        -------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns
+        -------------
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size, bias = 0))
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations,p=self.weights)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                thetastar = self.samples[i,3*self.K+self.Kc+j]
+                kconststar = self.samples[i,3*self.K+2*self.Kc+j]
+                    
+                y += self.samples[i,3*self.K+j]*gamma.pdf(x,a=kconststar,scale=thetastar)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+
+    def score_convolution(self, x, percentiles = [5, 95], size = 100):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
+
+        Parameters
+        -------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns
+        -------------
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+
+        yT = []
+        for l in range(size):
+            i = np.random.choice(self.iterations,p=self.weights)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                for k in range(self.K):
+                    theta1 = self.samples[i,self.K+k]
+                    theta2 = self.samples[i,3*self.K+self.Kc+j]
+                    k1 = self.samples[i,2*self.K+k]
+                    k2 = self.samples[i,3*self.K+2*self.Kc+j]
+                    mu = theta1*k1+theta2*k2
+                    s = theta1*theta1*k1+theta2*theta2*k2
+                    thetastar = s/mu
+                    kconststar = mu*mu/s
+                    
+                    y += self.samples[i,k]*self.samples[i,3*self.K+j]*gamma.pdf(x,a=kconststar,scale=thetastar)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
