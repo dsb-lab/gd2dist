@@ -74,10 +74,10 @@ class nestedsamplergamma(gdposteriormodelgamma):
 
         if prior_method == "vague":
             if priors == None and self.priors == []:
-                m = np.mean(dataNoise)
-                v = np.var(dataNoise)
-                m2 = np.mean(dataConvolution)
-                v2 = np.var(dataConvolution)
+                m = np.mean(dataNoise-self.bias)
+                v = np.var(dataNoise-self.bias)
+                m2 = np.mean(dataConvolution-self.bias)
+                v2 = np.var(dataConvolution-self.bias)
                 self.priors = [10*(v/m)**0.5,
                                 1.1,
                                 10*(m**2/v)**0.5,
@@ -93,10 +93,10 @@ class nestedsamplergamma(gdposteriormodelgamma):
         
         elif prior_method == "uniform":
             if priors == None and self.priors == []:
-                m = np.mean(dataNoise)
-                v = np.var(dataNoise)
-                m2 = np.mean(dataConvolution)
-                v2 = np.var(dataConvolution)
+                m = np.mean(dataNoise-self.bias)
+                v = np.var(dataNoise-self.bias)
+                m2 = np.mean(dataConvolution-self.bias)
+                v2 = np.var(dataConvolution-self.bias)
                 self.priors = [0,
                                 10*(v/m)**0.5,
                                 0,

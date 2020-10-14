@@ -75,14 +75,14 @@ class mcmcsamplergamma:
         elif bias < np.min([dataNoise,dataConvolution]):
             self.bias = bias
         if priors==None:
-            m = np.mean(dataNoise)
-            v = np.var(dataNoise)
+            m = np.mean(dataNoise-self.bias)
+            v = np.var(dataNoise-self.bias)
             self.priortheta_theta = 100*v/m
             self.priork_theta = 100*v/m
             self.priortheta_k = 1.1
             self.priork_k = 1.1
-            m = np.mean(dataConvolution)
-            v = np.var(dataConvolution)
+            m = np.mean(dataConvolution-self.bias)
+            v = np.var(dataConvolution-self.bias)
             self.priortheta_thetac = 100*v/m
             self.priork_thetac = 100*v/m
             self.priortheta_kc = 1.1
@@ -92,7 +92,7 @@ class mcmcsamplergamma:
         self.precission = precission
         self.method = method
 
-        self.samples = np.array(fit(dataNoise-self.bias, dataConvolution-2*self.bias,
+        self.samples = np.array(fit(dataNoise-self.bias, dataConvolution-self.bias,
                           self.ignored_iterations, self.iterations, self.chains,
                           self.K, self.Kc, 
                           self.alpha, self.alphac, 
@@ -218,13 +218,13 @@ class mcmcsamplergamma:
         """
 
         if style=="full":
-            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size, bias=0))+2*self.bias
+            return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size, bias=0))+self.bias
         elif style=="single":
             if pos == None:
                 pos = np.random.choice(range(len(self.samples))) 
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+2*self.bias
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+self.bias
             else:
-                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+2*self.bias
+                return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size=size,pos=pos, bias=0))+self.bias
 
 #        return  np.array(sample_convolution_gamma(self.samples,self.K,self.Kc,size))
 
@@ -277,7 +277,7 @@ class mcmcsamplergamma:
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution_gamma(self.samples, x-2*self.bias, self.K, self.Kc, percentiles, size, 0))
+        return  np.array(score_convolution_gamma(self.samples, x-self.bias, self.K, self.Kc, percentiles, size, 0))
 
     def sampler_statistics(self, sort="weight"):
         """

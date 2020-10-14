@@ -209,7 +209,7 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                 while(loss_new > loss_old && count < 200000){
                     min -= expansion;
                     if(min <= 0){
-                        min = 0.01;
+                        min = 0;
                         break;
                     }
                     loss_new = gamma_pdf_full_batch(datac, min, kconst[i], thetac, kconstc, bias,
@@ -302,7 +302,6 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                     min = old-expansion;
                     if(min <= 0){
                         min = 0;
-                        break;
                     }
                     loss_new = gamma_pdf_full_batch(min, kconst[i], thetac, kconstc, bias,
                                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, method,
@@ -366,6 +365,10 @@ void slice_theta(std::mt19937 & r, std::vector<double> &n, std::vector<double> &
                 thetanew[i] = theta[i];
             }
         }
+
+        /*pybind11::gil_scoped_acquire acquire;
+        pybind11::print("Theta ",thetanew[0]," ",thetanew[1]);
+        pybind11::gil_scoped_release release;*/
 
     return;
 }
@@ -500,7 +503,6 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
                     min = old-expansion;
                     if(min <= 0){
                         min = 0;
-                        break;
                     }
                     loss_new = gamma_pdf_full_batch(theta[i], min, thetac, kconstc, bias,
                                 priortheta_kc, priortheta_thetac, priork_kc, priork_thetac, precission, method,
@@ -563,6 +565,10 @@ void slice_k(std::mt19937 & r, std::vector<double> &n, std::vector<double> &x, s
                 kconstnew[i] = kconst[i];
             }
         }
+
+        /*pybind11::gil_scoped_acquire acquire;
+        pybind11::print("K ",kconstnew[0]," ",kconstnew[1]);
+        pybind11::gil_scoped_release release;*/
 
     return;
 }
@@ -709,7 +715,6 @@ void slice_thetac(std::mt19937 & r,
                     min = old-expansion;
                     if(min <= 0){
                         min = 0;
-                        break;
                     }
                     loss_new = gamma_pdf_full_batch(xc, xlogc, nc, theta, kconst, min, kconstc[i],
                                 bias,
@@ -780,6 +785,11 @@ void slice_thetac(std::mt19937 & r,
 
 
         }
+
+        /*pybind11::gil_scoped_acquire acquire;
+        pybind11::print("Thetac ",thetanewc[0]," ",thetanewc[1]," ",thetanewc[2]," ");
+        pybind11::gil_scoped_release release;*/
+
     return;
 }
 
@@ -824,7 +834,7 @@ void slice_kc(std::mt19937 &r,
                 while(loss_new > loss_old && count < 200000){
                     min -= expansion;
                     if(min <= 0){
-                        min = 0.01;
+                        min = 0;
                         break;
                     }
                     loss_new = gamma_pdf_full_batch(datac, theta, kconst, thetac[i], min,
@@ -925,7 +935,6 @@ void slice_kc(std::mt19937 &r,
                     min = old-expansion;
                     if(min <= 0){
                         min = 0;
-                        break;
                     }
                     loss_new = gamma_pdf_full_batch(xc, xlogc, nc, theta, kconst, thetac[i], min,
                                 bias,
@@ -990,10 +999,18 @@ void slice_kc(std::mt19937 &r,
                 }
 
                 kconstnewc[i] = newkconst;
+
             }else{
                 kconstnewc[i] = kconstc[i];
             }
         }
+
+/*        pybind11::gil_scoped_acquire acquire;
+        pybind11::print("Kc ",kconstnewc[0]," ",kconstnewc[1]," ",kconstnewc[2]," ", "contribution ", contribution);
+        pybind11::print("Kold ",kconstc[0]," ",kconstc[1]," ",kconstc[2]," ", "contribution ", contribution);
+        pybind11::print("Nc0 ",xc[0][0]," ",xc[0][1]," ",xc[0][2]," ");
+        pybind11::print("Nc1 ",xc[1][0]," ",xc[1][1]," ",xc[1][2]," ");
+        pybind11::gil_scoped_release release;*/
 
     return;
 }
@@ -1587,7 +1604,14 @@ void chain(int pos0, std::vector<std::vector<double>> & posterior, std::vector<d
                 kconstc[i] = dist4(r);
             }
         }
-        
+
+        /*pybind11::gil_scoped_acquire acquire;
+        pybind11::print("Theta0 ",theta[0]," ",theta[1]);
+        pybind11::print("K0 ",kconst[0]," ",kconst[1]);
+        pybind11::print("Thetac0 ", thetac[0], " ",thetac[1], " ",thetac[2], " ");
+        pybind11::print("Kc0 ", kconstc[0], " ",kconstc[1], " ",kconstc[2], " ");
+        pybind11::gil_scoped_release release;*/
+
         int progressStep = floor(ignored_iterations/10);
         int progressCounter = 0;
         int chainId = int(pos0/iterations);

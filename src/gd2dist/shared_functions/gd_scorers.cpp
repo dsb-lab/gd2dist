@@ -12,6 +12,8 @@
 #include "gd_scorers.h"
 #include "probability_distributions.h"
 
+#include "pybind11/pybind11.h"
+
 //logpdf
 double aut_norm_mixt_logpdf(double x, std::vector<double> parameters, int K, int Kc){
 
@@ -293,6 +295,8 @@ double deconv_gamma_mixt_logpdf(double x, std::vector<double> parameters, int K,
     }
 
     value = std::log(value)+max;
+
+    pybind11::print(value);
 
     return value;
 }
