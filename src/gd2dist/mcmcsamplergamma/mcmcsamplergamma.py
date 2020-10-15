@@ -253,7 +253,7 @@ class mcmcsamplergamma:
                 y += self.samples[i,k]*gamma.pdf(x,a=kconststar,scale=thetastar)
             yT.append(y)
 
-        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
 
     def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
         """
@@ -281,7 +281,7 @@ class mcmcsamplergamma:
                 y += self.samples[i,3*self.K+j]*gamma.pdf(x,a=kconststar,scale=thetastar)
             yT.append(y)
 
-        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
 
     def score_convolution(self, x, percentiles = [5, 95], size = 100):
         """
@@ -316,7 +316,7 @@ class mcmcsamplergamma:
                     y += self.samples[i,k]*self.samples[i,3*self.K+j]*gamma.pdf(x,a=kconststar,scale=thetastar)
             yT.append(y)
 
-        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
 
     def sampler_statistics(self, sort="weight"):
         """

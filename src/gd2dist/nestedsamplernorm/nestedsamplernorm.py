@@ -296,7 +296,7 @@ class nestedsamplernorm(gdposteriormodelnorm):
                 y += self.samples[i,k]*norm.pdf(x,loc=mu,scale=sigma)
             yT.append(y)
 
-        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
 
     def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
         """
@@ -324,7 +324,7 @@ class nestedsamplernorm(gdposteriormodelnorm):
                 y += self.samples[i,3*self.K+j]*norm.pdf(x,loc=mu,scale=sigma)
             yT.append(y)
 
-        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
 
     def score_convolution(self, x, percentiles = [5, 95], size = 100):
         """
@@ -357,4 +357,4 @@ class nestedsamplernorm(gdposteriormodelnorm):
                     y += self.samples[i,k]*self.samples[i,3*self.K+j]*norm.pdf(x,loc=mu,scale=s)
             yT.append(y)
 
-        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=1)
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
