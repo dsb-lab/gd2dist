@@ -177,6 +177,81 @@ class mcmcsamplernorm:
 
         return
 
+    def sample_autofluorescence(self, size = 1, style = "full", pos = None):
+        """
+        Generate samples from the fitted posterior distribution according to the noise distribution
+
+        Parameters
+        --------------
+            size: int, number of samples to be drawn
+            style: string ("full" or "single"), sample from the posterior and then sample, or all the samples from the same posterior draw
+            pos: if style = "single", draw from the posterior from which to choose
+
+        Returns:
+            list: list, 1D array with *size* samples from the model
+        """
+
+        if style=="full":
+            return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size=size))
+        elif style=="single":
+            if pos == None:
+                pos = np.random.choice(range(len(self.samples))) 
+                return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size=size,pos=pos))
+            else:
+                return  np.array(sample_autofluorescence(self.samples,self.K,self.Kc,size=size,pos=pos))
+
+        return
+
+    def sample_deconvolution(self, size = 1, style = "full", pos = None):
+        """
+        Generate samples from the fitted posterior distribution according to the deconvolved distribution
+
+        Parameters
+        --------------
+            size: int, number of samples to be drawn
+            style: string ("full" or "single"), sample from the posterior and then sample, or all the samples from the same posterior draw
+            pos: if style = "single", draw from the posterior from which to choose
+
+        Returns:
+            list: list, 1D array with *size* samples from the model
+        """
+
+        if style=="full":
+            return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size=size))
+        elif style=="single":
+            if pos == None:
+                pos = np.random.choice(range(len(self.samples))) 
+                return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size=size,pos=pos))
+            else:
+                return  np.array(sample_deconvolution(self.samples,self.K,self.Kc,size=size,pos=pos))
+
+        return
+
+    def sample_convolution(self, size = 1, style = "full", pos = None):
+        """
+        Generate samples from the fitted posterior distribution according to the convolved distribution
+
+        Parameters
+        --------------
+            size: int, number of samples to be drawn
+            style: string ("full" or "single"), sample from the posterior and then sample, or all the samples from the same posterior draw
+            pos: if style = "single", draw from the posterior from which to choose
+
+        Returns:
+            list: list, 1D array with *size* samples from the model
+        """
+
+        if style=="full":
+            return  np.array(sample_convolution(self.samples,self.K,self.Kc,size=size))
+        elif style=="single":
+            if pos == None:
+                pos = np.random.choice(range(len(self.samples))) 
+                return  np.array(sample_convolution(self.samples,self.K,self.Kc,size=size,pos=pos))
+            else:
+                return  np.array(sample_convolution(self.samples,self.K,self.Kc,size=size,pos=pos))
+
+        return
+
     def score_autofluorescence(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
