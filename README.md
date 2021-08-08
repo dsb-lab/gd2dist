@@ -6,7 +6,7 @@ Package which allow the deconvolution of two added random variables using bayesi
 Z = X + Y
 ```
 
-where `X`,`Y`,`Z` are random variables. If we have a sample of values from distribution `X` and `Z`, the package tryes to deconvolve the signal to obtain a distribution of `Y`. The kinds of bayesian mixtures are implemented:
+where `X` we call it the autofluorescence,`Y` the deconvolution and`Z` the convolution; which are random variables. If we have a sample of values from distribution `X` and `Z`, the package tryes to deconvolve the signal to obtain a distribution of `Y`. The kinds of bayesian mixtures are implemented:
 
 1. Gaussian
 2. Gamma
