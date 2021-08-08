@@ -22,5 +22,5 @@ setup(
     package_dir={'': 'src'},
     cmake_install_dir='src/gd2dist',
     python_requires = ">=3.5",
-    install_requires = ["numpy","scipy","dynesty","pandas"]
+    install_requires = ["numpy>=1.17.5","scipy>=1.5.0","dynesty>=0.9.7","pandas>=0.25.0"]
 )
