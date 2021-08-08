@@ -1,6 +1,15 @@
 # gd2dist
 
-Package which allow the deconvolution of two random variables using bayesian approaches.
+Package which allow the deconvolution of two added random variables using bayesian mixture approaches.
+
+```
+Z = X + Y
+```
+
+where `X`,`Y`,`Z` are random variables. If we have a sample of values from distribution `X` and `Z`, the package tryes to deconvolve the signal to obtain a distribution of `Y`. The kinds of bayesian mixtures are implemented:
+
+1. Gaussian
+2. Gamma
 
 ## Installation
 
@@ -10,7 +19,8 @@ The package can be installed from the PyPi repository with the command:
 pip install gd2dist
 ```
 
-The package is compiled for most part of usual operating systems. In case of problems, you can always compile the package from the git repository. The requirements for installation are:
+### Problems with nstallation from PyPi
+In case of problems, you can always compile the package from the git repository. The requirements for installation are:
  1. CMake
  2. A C++ compiler and at least c++11 standard (g++, Visual Studio, Clang...)
  3. The scikit-build library for python (if not, `pip install scikit-build`)
