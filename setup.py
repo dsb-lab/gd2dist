@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="gd2dist",
+    name="scBayesDec",
     version="0.1",
     description="A gaussian deconvolution package",
     author='Gabriel Torregrosa Cortes',
@@ -18,9 +18,9 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
-    packages=['gd2dist', 'gd2dist/nestedsamplernorm', 'gd2dist/mcmcsamplernorm', 'gd2dist/nestedsamplergamma', 'gd2dist/mcmcsamplergamma', 'gd2dist/shared_functions'],
+    packages=['scBayesDec', 'scBayesDec/nestedsamplernorm', 'scBayesDec/mcmcsamplernorm', 'scBayesDec/nestedsamplergamma', 'scBayesDec/mcmcsamplergamma', 'scBayesDec/shared_functions'],
     package_dir={'': 'src'},
-    cmake_install_dir='src/gd2dist',
+    cmake_install_dir='src/scBayesDec',
     python_requires = ">=3.5",
     install_requires = ["numpy>=1.17.5","scipy>=1.5.0","dynesty>=0.9.7","pandas>=0.25.0"]
 )
