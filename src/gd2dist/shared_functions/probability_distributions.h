@@ -3,6 +3,13 @@
 
 #include <math.h>
 #include <random>
+#include <string>
+
+double
+gamma_pdf(double, double, double, double);
+
+double
+gamma_sum_pdf(double, double, double, double, double, double, double = 0.999, std::string = "moments");
 
 double
 gaussian_pdf(double, double, double);

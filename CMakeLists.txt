@@ -2,8 +2,10 @@ cmake_minimum_required(VERSION 3.14...3.17)
 
 project(gd2dist VERSION "0.1")
 
-# Fetch pybind11
+set(CMAKE_CXX_STANDARD 17)
+
 include(FetchContent)
+# Fetch pybind11
 FetchContent_Declare(
   pybind11
   GIT_REPOSITORY https://github.com/pybind/pybind11
@@ -11,23 +13,49 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(pybind11)
 
+# Fetch boost
+FetchContent_Declare(
+  boostorg
+  GIT_REPOSITORY https://github.com/boostorg/math
+  GIT_TAG        master
+)
+FetchContent_MakeAvailable(boostorg)
+include_directories(${boostorg_SOURCE_DIR})
+include_directories(${boostorg_SOURCE_DIR}/include)
+
 # Define CMAKE_INSTALL_xxx: LIBDIR, INCLUDEDIR
 include(GNUInstallDirs)
 
-set(python_module_name1 gdposteriormodel)
-pybind11_add_module(${python_module_name1} MODULE 
-  src/gd2dist/nestedsampler/gdposteriormodel_wrapper.cpp
-  src/gd2dist/nestedsampler/gdposteriormodel.cpp
+set(python_module_name_norm gdposteriormodelnorm)
+pybind11_add_module(${python_module_name_norm} MODULE 
+  src/gd2dist/nestedsamplernorm/gdposteriormodelnorm_wrapper.cpp
+  src/gd2dist/nestedsamplernorm/gdposteriormodelnorm.cpp
 )
-install(TARGETS ${python_module_name1} DESTINATION ./nestedsampler)
+install(TARGETS ${python_module_name_norm} DESTINATION ./nestedsamplernorm)
 
-set(python_module_name2 mcmcposteriorsampler)
-pybind11_add_module(${python_module_name2} MODULE 
-  src/gd2dist/mcmcsampler/mcmcsampler_wrapper.cpp
-  src/gd2dist/mcmcsampler/mcmcsampler.cpp
+set(python_module_name_gamma gdposteriormodelgamma)
+pybind11_add_module(${python_module_name_gamma} MODULE 
+  src/gd2dist/nestedsamplergamma/gdposteriormodelgamma_wrapper.cpp
+  src/gd2dist/nestedsamplergamma/gdposteriormodelgamma.cpp
+  src/gd2dist/shared_functions/probability_distributions.cpp
+)
+install(TARGETS ${python_module_name_gamma} DESTINATION ./nestedsamplergamma)
+
+set(python_module_name_nested_norm mcmcposteriorsamplernorm)
+pybind11_add_module(${python_module_name_nested_norm} MODULE 
+  src/gd2dist/mcmcsamplernorm/mcmcsamplernorm_wrapper.cpp
+  src/gd2dist/mcmcsamplernorm/mcmcsamplernorm.cpp
   src/gd2dist/shared_functions/probability_distributions.cpp
   )
-install(TARGETS ${python_module_name2} DESTINATION ./mcmcsampler)
+install(TARGETS ${python_module_name_nested_norm} DESTINATION ./mcmcsamplernorm)
+
+set(python_module_name_nested_gamma mcmcposteriorsamplergamma)
+pybind11_add_module(${python_module_name_nested_gamma} MODULE 
+  src/gd2dist/mcmcsamplergamma/mcmcsamplergamma_wrapper.cpp
+  src/gd2dist/mcmcsamplergamma/mcmcsamplergamma.cpp
+  src/gd2dist/shared_functions/probability_distributions.cpp
+  )
+install(TARGETS ${python_module_name_nested_gamma} DESTINATION ./mcmcsamplergamma)
 
 set(python_module_name3 shared_functions)
 pybind11_add_module(${python_module_name3} MODULE 

@@ -1,5 +1,5 @@
 import dynesty as dn
-from .gdposteriormodel import gdposteriormodel
+from .gdposteriormodelnorm import gdposteriormodelnorm
 import numpy as np
 import inspect
 from scipy.stats import norm
@@ -7,7 +7,7 @@ import pickle as pk
 
 from ..shared_functions import *
 
-class nestedsampler(gdposteriormodel):
+class nestedsamplernorm(gdposteriormodelnorm):
     """
     Class for the nested sampler of the deconvolution gaussian model
     """
@@ -25,12 +25,13 @@ class nestedsampler(gdposteriormodel):
         --------------
             nothing
         """
-        gdposteriormodel.__init__(self,[],[],K,Kc)
+        gdposteriormodelnorm.__init__(self,[],[],K,Kc)
         self.fitted = False
+        self.priors = []
 
         return
 
-    def fit(self, dataNoise, dataConvolution, **kwargs):
+    def fit(self, dataNoise, dataConvolution, prior_method = "uniform", priors = None, **kwargs):
         """
         Fit the model to the posterior distribution
 
@@ -49,8 +50,6 @@ class nestedsampler(gdposteriormodel):
         """
         self.data = dataNoise
         self.datac = dataConvolution
-        self.dataMin = np.min([dataNoise,dataConvolution])
-        self.dataMax = np.max([dataNoise,dataConvolution])
 
         #separate kargs for the two different samplers functions
         #nested sampler function
@@ -63,8 +62,46 @@ class nestedsampler(gdposteriormodel):
         run_nested_args = [k for k, v in inspect.signature(dn.NestedSampler).parameters.items()]
         run_nested_dict = {k: kwargs.pop(k) for k in dict(kwargs) if k in run_nested_args}
         #make fit
-        gdposteriormodel.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
-        dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+        gdposteriormodelnorm.__init__(self,dataNoise,dataConvolution,self.K,self.Kc)
+
+        if prior_method == "vague":
+            if priors == None and self.priors == []:
+                m = np.min(dataNoise)
+                M = np.max(dataNoise) 
+                m2 = np.min(dataConvolution)
+                M2 = np.max(dataConvolution) 
+                self.priors = [(M+m)/2,
+                                5*(M-m)**0.5,
+                                3*(M-m)**0.5,
+                                1.1,
+                                (M2+m2)/2,
+                                5*(M2-m2)**0.5,
+                                3*(M2-m2)**0.5,
+                                1.1]
+            elif self.priors == []:
+                self.priors = priors
+
+            dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior, 3*self.K+3*self.Kc, **nestedsampler_dict)
+
+        elif prior_method == "uniform":
+            if priors == None and self.priors == []:
+                m = np.min(dataNoise)
+                M = np.max(dataNoise) 
+                m2 = np.min(dataConvolution)
+                M2 = np.max(dataConvolution) 
+                self.priors = [m,
+                                M,
+                                0,
+                                (M-m),
+                                m2,
+                                M2,
+                                0,
+                                (M2-m2)]
+            elif self.priors == []:
+                self.priors = priors
+
+            dynestyModel = dn.NestedSampler(self.logLikelihood, self.prior_uniform, 3*self.K+3*self.Kc, **nestedsampler_dict)
+
         dynestyModel.run_nested(**run_nested_dict)
         self.results = {}
         self.results["samples"] = dynestyModel.results["samples"]
@@ -234,50 +271,90 @@ class nestedsampler(gdposteriormodel):
 
         return
 
-    def score_autofluorescence(self, x, percentiles = [0.05, 0.95], size = 500):
-        """
-        Evaluate the mean and percentiles of the the pdf at certain position acording to the noise distribution
-
-        Parameters
-        --------------
-            x: list/array, positions where to evaluate the distribution
-            percentiles: list/array, percentiles to be evaluated
-            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
-
-        Returns:
-            list: list, 2D array with the mean and all the percentile evaluations at all points in x
-        """
-
-        return  np.array(score_autofluorescence(self.samples, x, self.K,self.Kc, percentiles = percentiles, weights=self.weights, size=size))
-
-    def score_deconvolution(self, x, percentiles = [0.05, 0.95], size = 500):
-        """
-        Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
-
-        Parameters
-        --------------
-            x: list/array, positions where to evaluate the distribution
-            percentiles: list/array, percentiles to be evaluated
-            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
-
-        Returns:
-            list: list, 2D array with the mean and all the percentile evaluations at all points in x
-        """
-
-        return  np.array(score_deconvolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size))
-
-    def score_convolution(self, x, percentiles = [0.05, 0.95], size = 500):
+    def score_autofluorescence(self, x, percentiles = [5, 95], size = 100):
         """
         Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
 
         Parameters
-        --------------
+        -------------
             x: list/array, positions where to evaluate the distribution
             percentiles: list/array, percentiles to be evaluated
             size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
 
-        Returns:
+        Returns
+        -------------
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+        yT = []
+        for l in range(size):
+            i = np.random.choice(len(self.weights),p=self.weights)
+            y = np.zeros(len(x))
+            for k in range(self.K):
+                mu = self.samples[i,self.K+k]
+                sigma = self.samples[i,2*self.K+k]
+                    
+                y += self.samples[i,k]*norm.pdf(x,loc=mu,scale=sigma)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
+
+    def score_deconvolution(self, x, percentiles = [5, 95], size = 100):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the deconvolved distribution
+
+        Parameters
+        -------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns
+        -------------
             list: list, 2D array with the mean and all the percentile evaluations at all points in x
         """
 
-        return  np.array(score_convolution(self.samples, x, self.K, self.Kc, percentiles = percentiles, weights=self.weights, size=size))
+        yT = []
+        for l in range(size):
+            i = np.random.choice(len(self.weights),p=self.weights)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                mu = self.samples[i,3*self.K+self.Kc+j]
+                sigma = self.samples[i,3*self.K+2*self.Kc+j]
+                    
+                y += self.samples[i,3*self.K+j]*norm.pdf(x,loc=mu,scale=sigma)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)
+
+    def score_convolution(self, x, percentiles = [5, 95], size = 100):
+        """
+        Evaluate the mean and percentiles of the the pdf at certain position acording to the convolved distribution
+
+        Parameters
+        -------------
+            x: list/array, positions where to evaluate the distribution
+            percentiles: list/array, percentiles to be evaluated
+            size: int, number of samples to draw from the posterior to make the statistics, bigger numbers give more stability
+
+        Returns
+        -------------
+            list: list, 2D array with the mean and all the percentile evaluations at all points in x
+        """
+
+        yT = []
+        for l in range(size):
+            i = np.random.choice(len(self.weights),p=self.weights)
+            y = np.zeros(len(x))
+            for j in range(self.Kc):
+                for k in range(self.K):
+                    mu1 = self.samples[i,self.K+k]
+                    mu2 = self.samples[i,3*self.K+self.Kc+j]
+                    sigma1 = self.samples[i,2*self.K+k]
+                    sigma2 = self.samples[i,3*self.K+2*self.Kc+j]
+                    mu = mu1
+                    s = np.sqrt(sigma1**2+sigma2**2)
+                    
+                    y += self.samples[i,k]*self.samples[i,3*self.K+j]*norm.pdf(x,loc=mu,scale=s)
+            yT.append(y)
+
+        return  np.mean(yT,axis=0),np.percentile(yT,percentiles,axis=0)

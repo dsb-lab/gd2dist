@@ -2,11 +2,15 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
-#include "gdposteriormodel.h"
+#include "gdposteriormodelnorm.h"
+#include "../shared_functions/probability_distributions.h"
+#include "include/boost/math/special_functions/gamma.hpp"
+#include "include/boost/math/special_functions/erf.hpp"
+#include "include/boost/math/special_functions/detail/lgamma_small.hpp"
 
 #include "pybind11/pybind11.h"
 
-gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
+gdposteriormodelnorm::gdposteriormodelnorm(std::vector<double> datanoise, std::vector<double> dataconvolution, int k, int kc){
     dataNoise = datanoise;
     dataConvolution = dataconvolution;
     K = k;
@@ -22,7 +26,7 @@ gdposteriormodel::gdposteriormodel(std::vector<double> datanoise, std::vector<do
     }
 }
 
-double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
+double gdposteriormodelnorm::logLikelihood(std::vector<double>& parameters){
     double likelihood =  0;
     double max = -INFINITY;
     std::vector<double> exponent(K*Kc,0);
@@ -70,7 +74,7 @@ double gdposteriormodel::logLikelihood(std::vector<double>& parameters){
     return likelihood;
 }
 
-std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
+std::vector<double> gdposteriormodelnorm::prior(std::vector<double>& uniform){
 
     std::vector<double> transformed(3*K+3*Kc,0);
 
@@ -90,11 +94,15 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < K; i++){
-        transformed[K+i] = (dataMax-dataMin)*uniform[K+i]+dataMin;
+        if(uniform[K+i] < 0.5){
+            transformed[K+i] = -priors[1]*boost::math::erf_inv(2*(0.5-uniform[K+i]))+priors[0];
+        }else{
+            transformed[K+i] = priors[1]*boost::math::erf_inv(2*(uniform[K+i]-0.5))+priors[0];
+        }
     }
     //Std
     for(int i = 0; i < K; i++){
-        transformed[2*K+i] = 3*(dataMax-dataMin)*uniform[2*K+i];
+        transformed[2*K+i] = priors[2]*boost::math::gamma_p_inv(priors[3],uniform[2*K+i]);
     }
 
     //Uniform sphere
@@ -112,11 +120,67 @@ std::vector<double> gdposteriormodel::prior(std::vector<double>& uniform){
     }
     //Mean
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+Kc+i] = (dataMax-dataMin)*uniform[3*K+Kc+i]+dataMin;
+        if(uniform[3*K+Kc+i] < 0.5){
+            transformed[3*K+Kc+i] = -priors[5]*boost::math::erf_inv(2*(0.5-uniform[3*K+Kc+i]))+priors[4];
+        }else{
+            transformed[3*K+Kc+i] = priors[5]*boost::math::erf_inv(2*(uniform[3*K+Kc+i]-0.5))+priors[4];
+        }
     }
     //Std
     for(int i = 0; i < Kc; i++){
-        transformed[3*K+2*Kc+i] = 3*(dataMax-dataMin)*uniform[3*K+2*Kc+i];
+        transformed[3*K+2*Kc+i] = priors[6]*boost::math::gamma_p_inv(priors[7],uniform[3*K+2*Kc+i]);
+    }
+
+    return transformed;
+}
+
+std::vector<double> gdposteriormodelnorm::prior_uniform(std::vector<double>& uniform){
+
+    std::vector<double> transformed(3*K+3*Kc,0);
+
+    int pos = 0;
+    double total = 0;
+    //Uniform sphere
+    for(int i = 0; i < K; i++){
+        pos = 0;
+        while(uniform[i] > normcdf[pos] && pos < 9998){
+            pos++;
+        }
+        transformed[i] = abs(x[pos]+x[pos-1])/2;
+        total += transformed[i];
+    }
+    for(int i = 0; i < K; i++){
+        transformed[i] /= total;
+    }
+    //Mean
+    for(int i = 0; i < K; i++){
+        transformed[K+i] = (priors[1]-priors[0])*uniform[K+i]+priors[0];
+    }
+    //Std
+    for(int i = 0; i < K; i++){
+        transformed[2*K+i] = (priors[3]-priors[2])*uniform[2*K+i]+priors[2];
+    }
+
+    //Uniform sphere
+    total = 0;
+    for(int i = 0; i < Kc; i++){
+        pos = 0;
+        while(uniform[3*K+i] > normcdf[pos] && pos < 9998){
+            pos++;
+        }
+        transformed[3*K+i] = abs(x[pos]+x[pos-1])/2;
+        total += transformed[3*K+i];
+    }
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+i] /= total;
+    }
+    //Mean
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+Kc+i] = (priors[5]-priors[4])*uniform[3*K+Kc+i]+priors[4];
+    }
+    //Std
+    for(int i = 0; i < Kc; i++){
+        transformed[3*K+2*Kc+i] = 3*(priors[7]-priors[6])*uniform[3*K+2*Kc+i]+priors[6];
     }
 
     return transformed;

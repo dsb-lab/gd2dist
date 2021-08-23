@@ -28,4 +28,29 @@ std::vector<double> sample_deconvolution_single(std::vector<std::vector<double>>
 std::vector<double> sample_convolution_single(std::vector<std::vector<double>>&, int, int, int, int);
 std::vector<double> sample_convolution_single(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int);
 
+//Samplers autofluorescence
+std::vector<double> sample_autofluorescence_gamma(std::vector<std::vector<double>>&, int, int, int, double);
+std::vector<double> sample_autofluorescence_gamma(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, double);
+
+//Samplers deconvolution
+std::vector<double> sample_deconvolution_gamma(std::vector<std::vector<double>>&, int, int, int, double);
+std::vector<double> sample_deconvolution_gamma(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, double);
+
+//Samplers convolution
+std::vector<double> sample_convolution_gamma(std::vector<std::vector<double>>&, int, int, int, double);
+std::vector<double> sample_convolution_gamma(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, double);
+
+//Samplers autofluorescence
+std::vector<double> sample_autofluorescence_single_gamma(std::vector<std::vector<double>>&, int, int, int, int, double);
+std::vector<double> sample_autofluorescence_single_gamma(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int, double);
+
+//Samplers deconvolution
+std::vector<double> sample_deconvolution_single_gamma(std::vector<std::vector<double>>&, int, int, int, int, double);
+std::vector<double> sample_deconvolution_single_gamma(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int, double);
+
+//Samplers convolution
+std::vector<double> sample_convolution_single_gamma(std::vector<std::vector<double>>&, int, int, int, int, double);
+std::vector<double> sample_convolution_single_gamma(std::vector<std::vector<double>>&, int, int, std::vector<double>&, int, int, double);
+
+
 #endif
