@@ -19,3 +19,8 @@ compile.sh
 slicesampling.cpp
 
 .ipynb_checkpoints
+.upload
+
+examples/paper/Data/Synthetic/*
+examples/paper/.ipynb_checkpoints
+examples/paper/__pycache__

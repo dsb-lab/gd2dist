@@ -49,7 +49,7 @@ class mcmcsamplergamma:
             iterations: int, number of samples to be drawn and stored for each chain during the sampling
             ignored_iterations: int, number of samples to be drawn and ignored for each chain during the sampling
             chains: int, number of independently initialised realisations of the markov chain
-            theta: float, parameter of the prior gamma distribution acording to the definition of the wikipedia
+            priors: array, parameter of the prior gamma distribution acording to the definition of the wikipedia
             kconst: float, parameter k of the prior gamma distribution
             initialConditions: list, 1D array with all the parameters required to initialise manually all the components of all the chains the chains
             show_progress: bool, indicate if the method should show the progress in the generation of the new data
@@ -74,6 +74,7 @@ class mcmcsamplergamma:
                 self.bias = 0
         elif bias < np.min([dataNoise,dataConvolution]):
             self.bias = bias
+
         if priors==None:
             m = np.mean(dataNoise-self.bias)
             v = np.var(dataNoise-self.bias)
@@ -121,7 +122,10 @@ class mcmcsamplergamma:
             pickling_on = open(name+".pickle","wb")
             pk.dump({"K":self.K, "Kc":self.Kc, "alpha": self.alpha, "alphac": self.alphac, "iterations": self.iterations,
                      "ignored_iterations": self.ignored_iterations,
-                     "chains":self.chains, "sigmawidth":self.sigmawidth, "samples":self.samples}, pickling_on)
+                     "priortheta_k": self.priortheta_k, "priortheta_theta": self.priortheta_theta, "priork_k": self.priork_k, 
+                     "priork_theta": self.priork_theta, "priortheta_kc": self.priortheta_kc, "priortheta_thetac": self.priortheta_thetac, 
+                     "priortheta_thetac": self.priortheta_thetac, "priork_thetac": self.priork_thetac, 
+                     "chains":self.chains, "samples":self.samples}, pickling_on)
             pickling_on.close()
         else:
             print("The model has not been fitted so there is nothing to save.")
@@ -149,8 +153,15 @@ class mcmcsamplergamma:
         self.iterations = aux["iterations"]
         self.ignored_iterations = aux["ignored_iterations"]
         self.chains = aux["chains"]
-        self.sigmawidth = aux["sigmawidth"]
         self.samples = aux["samples"]
+        self.priortheta_k = aux["priortheta_k"]
+        self.priortheta_theta = aux["priortheta_theta"]
+        self.priork_k = aux["priork_k"] 
+        self.priork_theta = aux["priork_theta"]
+        self.priortheta_kc = aux["priortheta_kc"] 
+        self.priortheta_thetac = aux["priortheta_thetac"] 
+        self.priortheta_thetac = aux["priortheta_thetac"] 
+        self.priork_thetac = aux["priork_thetac"]
 
         self.fitted = True
 

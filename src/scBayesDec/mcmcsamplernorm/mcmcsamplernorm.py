@@ -45,7 +45,7 @@ class mcmcsamplernorm:
             iterations: int, number of samples to be drawn and stored for each chain during the sampling
             ignored_iterations: int, number of samples to be drawn and ignored for each chain during the sampling
             chains: int, number of independently initialised realisations of the markov chain
-            theta: float, parameter of the prior gamma distribution acording to the definition of the wikipedia
+            priors: array, parameter of the priors gamma distribution acording to the definition of the wikipedia
             kconst: float, parameter k of the prior gamma distribution
             initialConditions: list, 1D array with all the parameters required to initialise manually all the components of all the chains the chains
             show_progress: bool, indicate if the method should show the progress in the generation of the new data
@@ -140,9 +140,9 @@ class mcmcsamplernorm:
         """
         if self.fitted:
             pickling_on = open(name+".pickle","wb")
-            pk.dump({"K":self.K, "Kc":self.Kc, "alpha": self.alpha, "alphac": self.alphac, "iterations": self.iterations,
+            pk.dump({"K":self.K, "Kc":self.Kc, "priors": self.priors, "iterations": self.iterations,
                      "ignored_iterations": self.ignored_iterations,
-                     "chains":self.chains, "sigmawidth":self.sigmawidth, "samples":self.samples}, pickling_on)
+                     "chains":self.chains, "samples":self.samples}, pickling_on)
             pickling_on.close()
         else:
             print("The model has not been fitted so there is nothing to save.")
@@ -165,12 +165,10 @@ class mcmcsamplernorm:
 
         self.K = aux["K"]
         self.Kc = aux ["Kc"]
-        self.alpha = aux["alpha"]
-        self.alphac = aux["alphac"]
+        self.priors = aux["priors"]
         self.iterations = aux["iterations"]
         self.ignored_iterations = aux["ignored_iterations"]
         self.chains = aux["chains"]
-        self.sigmawidth = aux["sigmawidth"]
         self.samples = aux["samples"]
 
         self.fitted = True

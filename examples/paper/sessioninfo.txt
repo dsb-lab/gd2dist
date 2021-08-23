@@ -1,0 +1,23 @@
+-----
+auxiliar_functions                  NA
+ipywidgets                          7.6.3
+matplotlib                          3.4.2
+numpy                               1.20.3
+pandas                              1.2.2
+scBayesDec                          NA
+scipy                               1.6.0
+seaborn                             0.11.1
+session_info                        1.0.0
+sklearn                             0.24.1
+synthetic_data_distributions        NA
+synthetic_data_pdf                  NA
+-----
+IPython             7.25.0
+jupyter_client      6.1.12
+jupyter_core        4.7.1
+notebook            6.3.0
+-----
+Python 3.9.6 (default, Jun 30 2021, 10:22:16) [GCC 11.1.0]
+Linux-5.10.53-1-MANJARO-x86_64-with-glibc2.33
+-----
+Session information updated at 2021-08-23 13:20
