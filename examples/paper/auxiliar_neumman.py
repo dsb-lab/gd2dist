@@ -6,6 +6,8 @@ import pandas as pd
 from scipy.signal import correlate
 from pickle import load, dump
 
+## Newman deconvolution
+
 def natural_estimate(data,w):
     sol = [0 for i in range(len(w))]
     l = len(data)
@@ -39,13 +41,3 @@ def FT_deconv(aut,data,d1=1,d2=1,dw=0.01,w_lims=[-100,100],dx=0.1,x_lims=[-100,1
         deconv = np.dot(phiY*Kw/phie,np.exp(-1j*w.reshape(-1,1)*x))*dw
 
     return deconv, x
-
-def MISE(data1, data2, dx):
-    val = np.sum((data1-data2)**2)*dx
-    
-    return val
-
-def AISE(data1, data2, dx):
-    val = 1-0.5*np.sum(np.abs(data1-data2))*dx
-    
-    return val
