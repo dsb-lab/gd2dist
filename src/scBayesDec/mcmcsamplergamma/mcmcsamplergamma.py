@@ -74,6 +74,8 @@ class mcmcsamplergamma:
                 self.bias = 0
         elif bias < np.min([dataNoise,dataConvolution]):
             self.bias = bias
+        else:
+            self.bias = np.min([dataNoise,dataConvolution])*0.9999
 
         if priors==None:
             m = np.mean(dataNoise-self.bias)
@@ -125,7 +127,7 @@ class mcmcsamplergamma:
                      "priortheta_k": self.priortheta_k, "priortheta_theta": self.priortheta_theta, "priork_k": self.priork_k, 
                      "priork_theta": self.priork_theta, "priortheta_kc": self.priortheta_kc, "priortheta_thetac": self.priortheta_thetac, 
                      "priortheta_thetac": self.priortheta_thetac, "priork_thetac": self.priork_thetac, 
-                     "chains":self.chains, "samples":self.samples}, pickling_on)
+                     "bias":self.bias, "chains":self.chains, "samples":self.samples}, pickling_on)
             pickling_on.close()
         else:
             print("The model has not been fitted so there is nothing to save.")
@@ -162,6 +164,7 @@ class mcmcsamplergamma:
         self.priortheta_thetac = aux["priortheta_thetac"] 
         self.priortheta_thetac = aux["priortheta_thetac"] 
         self.priork_thetac = aux["priork_thetac"]
+        self.bias = aux["bias"]
 
         self.fitted = True
 

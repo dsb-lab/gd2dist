@@ -1,4 +1,4 @@
-# Paper gaussian deconvolution package
+# Analysis present in scBayesDeconv paper.
 
 This example goes over the example analysis performed for the publication of the **scBayesDec** package.
 
