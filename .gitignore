@@ -19,7 +19,7 @@ compile.sh
 slicesampling.cpp
 
 .ipynb_checkpoints
-.upload
+upload.sh
 
 examples/paper/Data/Synthetic/*
 examples/paper/.ipynb_checkpoints

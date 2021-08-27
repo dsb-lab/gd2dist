@@ -11,7 +11,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="scBayesDeconv",
-    version="0.2",
+    version="0.1",
     description="A gaussian deconvolution package",
     author='Gabriel Torregrosa Cortes',
     author_email="g.torregrosa@outlook.com",
