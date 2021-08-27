@@ -10,17 +10,15 @@ proba.sh
 dockers
 docker.sh
 
-dist
-docs
-tests
-
 a.out
 compile.sh
 slicesampling.cpp
 
 .ipynb_checkpoints
-upload.sh
 
 examples/paper/Data/Synthetic/*
 examples/paper/.ipynb_checkpoints
 examples/paper/__pycache__
+
+src/*/__pycache__
+upload.sh
