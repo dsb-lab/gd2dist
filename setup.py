@@ -15,6 +15,7 @@ setup(
     description="A gaussian deconvolution package",
     author='Gabriel Torregrosa Cortes',
     author_email="g.torregrosa@outlook.com",
+    url="https://github.com/dsb-lab/scBayesDeconv",
     long_description=long_description,
     long_description_content_type="text/markdown",
     license="MIT",
