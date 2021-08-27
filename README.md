@@ -1,4 +1,4 @@
-# scBayesDec
+# scBayesDeconv
 
 Package which allow the deconvolution of two added random variables using bayesian mixture approaches.
 
@@ -16,7 +16,7 @@ where `X` we call it the autofluorescence,`Y` the deconvolution and`Z` the convo
 The package can be installed from the PyPi repository with the command:
 
 ```shell
-pip install scBayesDec
+pip install scBayesDeconv
 ```
 
 ### Problems with nstallation from PyPi
@@ -47,7 +47,7 @@ Consider that we have two arrays of data, one with some noise `dataNoise` and th
 Import the package
 
 ```python
-import scBayesDec as gd
+import scBayesDeconv as gd
 ```
 
 Declare one of the two models. The models consider by default one gaussian for the noise and one gaussian for the convolved data. Consider that we want to fit the noise to one and the convolved data with three.

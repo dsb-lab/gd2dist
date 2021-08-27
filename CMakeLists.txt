@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.14...3.17)
 
-project(scBayesDec VERSION "0.1")
+project(scBayesDeconv VERSION "0.1")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -28,43 +28,43 @@ include(GNUInstallDirs)
 
 set(python_module_name_norm gdposteriormodelnorm)
 pybind11_add_module(${python_module_name_norm} MODULE 
-  src/scBayesDec/nestedsamplernorm/gdposteriormodelnorm_wrapper.cpp
-  src/scBayesDec/nestedsamplernorm/gdposteriormodelnorm.cpp
+  src/scBayesDeconv/nestedsamplernorm/gdposteriormodelnorm_wrapper.cpp
+  src/scBayesDeconv/nestedsamplernorm/gdposteriormodelnorm.cpp
 )
 install(TARGETS ${python_module_name_norm} DESTINATION ./nestedsamplernorm)
 
 set(python_module_name_gamma gdposteriormodelgamma)
 pybind11_add_module(${python_module_name_gamma} MODULE 
-  src/scBayesDec/nestedsamplergamma/gdposteriormodelgamma_wrapper.cpp
-  src/scBayesDec/nestedsamplergamma/gdposteriormodelgamma.cpp
-  src/scBayesDec/shared_functions/probability_distributions.cpp
+  src/scBayesDeconv/nestedsamplergamma/gdposteriormodelgamma_wrapper.cpp
+  src/scBayesDeconv/nestedsamplergamma/gdposteriormodelgamma.cpp
+  src/scBayesDeconv/shared_functions/probability_distributions.cpp
 )
 install(TARGETS ${python_module_name_gamma} DESTINATION ./nestedsamplergamma)
 
 set(python_module_name_nested_norm mcmcposteriorsamplernorm)
 pybind11_add_module(${python_module_name_nested_norm} MODULE 
-  src/scBayesDec/mcmcsamplernorm/mcmcsamplernorm_wrapper.cpp
-  src/scBayesDec/mcmcsamplernorm/mcmcsamplernorm.cpp
-  src/scBayesDec/shared_functions/probability_distributions.cpp
+  src/scBayesDeconv/mcmcsamplernorm/mcmcsamplernorm_wrapper.cpp
+  src/scBayesDeconv/mcmcsamplernorm/mcmcsamplernorm.cpp
+  src/scBayesDeconv/shared_functions/probability_distributions.cpp
   )
 install(TARGETS ${python_module_name_nested_norm} DESTINATION ./mcmcsamplernorm)
 
 set(python_module_name_nested_gamma mcmcposteriorsamplergamma)
 pybind11_add_module(${python_module_name_nested_gamma} MODULE 
-  src/scBayesDec/mcmcsamplergamma/mcmcsamplergamma_wrapper.cpp
-  src/scBayesDec/mcmcsamplergamma/mcmcsamplergamma.cpp
-  src/scBayesDec/shared_functions/probability_distributions.cpp
+  src/scBayesDeconv/mcmcsamplergamma/mcmcsamplergamma_wrapper.cpp
+  src/scBayesDeconv/mcmcsamplergamma/mcmcsamplergamma.cpp
+  src/scBayesDeconv/shared_functions/probability_distributions.cpp
   )
 install(TARGETS ${python_module_name_nested_gamma} DESTINATION ./mcmcsamplergamma)
 
 set(python_module_name3 shared_functions)
 pybind11_add_module(${python_module_name3} MODULE 
-  src/scBayesDec/shared_functions/shared_functions_wrapper.cpp
-  src/scBayesDec/shared_functions/general_functions.cpp
-  src/scBayesDec/shared_functions/gd_samplers.cpp
-  src/scBayesDec/shared_functions/gd_scorers.cpp
-  src/scBayesDec/shared_functions/global_random_generator.cpp
-  src/scBayesDec/shared_functions/probability_distributions.cpp
-  src/scBayesDec/shared_functions/mcmc_convergence_statistics.cpp
+  src/scBayesDeconv/shared_functions/shared_functions_wrapper.cpp
+  src/scBayesDeconv/shared_functions/general_functions.cpp
+  src/scBayesDeconv/shared_functions/gd_samplers.cpp
+  src/scBayesDeconv/shared_functions/gd_scorers.cpp
+  src/scBayesDeconv/shared_functions/global_random_generator.cpp
+  src/scBayesDeconv/shared_functions/probability_distributions.cpp
+  src/scBayesDeconv/shared_functions/mcmc_convergence_statistics.cpp
 )
 install(TARGETS ${python_module_name3} DESTINATION ./shared_functions)
