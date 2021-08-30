@@ -1,12 +1,12 @@
 # scBayesDeconv
 
-Package which allows the deconvolution of two added random variables using Bayesian mixture approaches.
+This package allows the deconvolution of two measured distributions using Bayesian mixture approaches. Let
 
 ```
 Z = X + Y
 ```
 
-where `X` we call it the autofluorescence,`Y` the deconvolution and`Z` the convolution; which are random variables. If we have a sample of values from distribution `X` and `Z`, the package tryes to deconvolve the signal to obtain a distribution of `Y`. The kinds of bayesian mixtures are implemented:
+where `X` is the signal of interest (e.g. protein abundance in the case of flow cytometry measurements), `Y` is an unwanted background noise (e.g. autofluorescence in flow cytometry), and `Z` is the total measured signal (that is obscured by the noise). If we have a sample of distribution measurements of `Y` and `Z`, the package tries to deconvolve the signal to obtain a distribution of `X`. Two kinds of Bayesian mixtures are implemented:
 
 1. Gaussian
 2. Gamma
