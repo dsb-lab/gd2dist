@@ -31,34 +31,34 @@ In the gaussian deconvolution folder, create the binary installation.
 python setup.py bdist_wheel
 ```
 
-This will generate a wheel in automatically created `dist` folder. Now, we can install it.
+This will generate a wheel in an automatically created `dist` folder. Now, we can install it.
 
 ```shell
 pip install ./dist/*
 ```
 
-If everything is okey, you should be happily running the code after a few seconds of compilation ;)
+If everything is ok, you should be happily running the code after a few seconds of compilation ;)
 
-## Small tutorial
+## Brief tutorial
 
-The package behaves very similar to the [scikit-learn](https://scikit-learn.org/) package.
+The package behaves very much like the [scikit-learn](https://scikit-learn.org/) package.
 
-Consider that we have two arrays of data, one with some noise `dataNoise` and the second with the convolved data `dataConvolved`.
-Import the package
+Consider that we have two arrays of data, one with some noise `dataNoise` and the second with the total signal (plus noise) `dataConvolved`.
+First import the package
 
 ```python
-import scBayesDeconv as gd
+import scBayesDeconv as bd
 ```
 
 Declare one of the two models. The models consider by default one gaussian for the noise and one gaussian for the convolved data. Consider that we want to fit the noise to one and the convolved data with three.
 
 ```python
-model = gd.mcmcsampler(K=1, Kc=3)
+model = bd.mcmcsampler(K=1, Kc=3)
 ```
 or
 
 ```python
-model = gd.nestedsampler(K=1, Kc=3)
+model = bd.nestedsampler(K=1, Kc=3)
 ```
 
 Once declared, fit the model:
@@ -90,7 +90,7 @@ In addition, for the mcmcsampler, it is possible to obtain some resume statistic
 model.statistics()
 ```
 
-An rhat close to 1 indicates that the posterior chains have mixed appropiately. neff is an indicator of the effective number of independent samples drawn from the model. For more information, have a look to the [Stan](https://mc-stan.org/) package and its associated bayesian statistics book, [Chaper 11](http://www.stat.columbia.edu/~gelman/book/).
+An rhat close to 1 indicates that the posterior chains have mixed appropiately. neff is an indicator of the effective number of independent samples drawn from the model. For more information, have a look to the [Stan](https://mc-stan.org/) package and its associated bayesian statistics book, [Chapter 11](http://www.stat.columbia.edu/~gelman/book/).
 
 ### Which model should I use?
 
