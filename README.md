@@ -1,6 +1,6 @@
 # scBayesDeconv
 
-Package which allow the deconvolution of two added random variables using bayesian mixture approaches.
+Package which allows the deconvolution of two added random variables using Bayesian mixture approaches.
 
 ```
 Z = X + Y
