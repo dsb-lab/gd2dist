@@ -1,6 +1,6 @@
 # scBayesDeconv
 
-This package allows the deconvolution of two measured distributions using Bayesian mixture approaches. Let
+This package allows the deconvolution of two measured distributions (e.g. distributions of protein abundance using flow cytometry with a fluorescence marker) using Bayesian mixture approaches. Let
 
 ```
 Z = X + Y
