@@ -17,6 +17,7 @@ slicesampling.cpp
 .ipynb_checkpoints
 
 examples/paper/Data/Synthetic/*
+!examples/paper/Data/Synthetic/.gitkeep
 examples/paper/.ipynb_checkpoints
 examples/paper/__pycache__
 
