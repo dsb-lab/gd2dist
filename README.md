@@ -65,9 +65,14 @@ alternativaly, you can choose another basis function and sampling method. The fo
 | Gamma | MCMC | mcmcsamplergamma |
 | Gamma | Nested | nestedsamplergamma |
 
-Once declared, fit the model:
+Once declared, fit the model. The model accepts as entry two `numpy` arrays with one dimension of the length of the dataset. As an example:
 
 ```python
+import numpy as np
+dataNoise = np.random.normal(1,1,size=1000) #The noise comes from a distribution around one with standard deviation one.
+dataConvolved = np.random.normal(1,np.sqrt(2),size=1000) #The deconvolved distribution comes from a distribution around zero with standard deviation one.
+
+#Fit the data
 model.fit(dataNoise,dataConvolved)
 ```
 
