@@ -19,7 +19,6 @@ The package can be installed from the PyPi repository with the command:
 pip install scBayesDeconv
 ```
 
-### Problems with nstallation from PyPi
 In case of problems, you can always compile the package from the git repository. The requirements for installation are:
  1. CMake
  2. A C++ compiler and at least c++11 standard (g++, Visual Studio, Clang...)
